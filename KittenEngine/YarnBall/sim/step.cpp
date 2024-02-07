@@ -10,8 +10,8 @@ namespace YarnBall {
 
 		startIterate();
 
-		for (size_t i = 0; i < meta.numItr; i++, frame++) {
-			if (meta.collisionPeriod > 0 && frame % meta.collisionPeriod == 0) {
+		for (size_t i = 0; i < meta.numItr; i++) {
+			if (meta.collisionPeriod > 0 && i % meta.collisionPeriod == 0) {
 				// TODO: Build collision data
 			}
 

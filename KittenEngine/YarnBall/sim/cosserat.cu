@@ -8,12 +8,12 @@ namespace YarnBall {
 		float s = sqrt(f2) + length(b);
 		float D = 1 / (f2 - s * s);
 		b *= D;
-		return mat4(
+		return normalize(mat4(
 			s - f.x, -f.y, -f.z, 0,
 			-f.y, s + f.x, 0, f.z,
 			-f.z, 0, s + f.x, -f.y,
 			0, f.z, -f.y, s - f.x
-		) * b;
+		) * b);
 	}
 
 	__global__ void cosseratItr(MetaData* data) {
@@ -88,7 +88,6 @@ namespace YarnBall {
 
 			segD *= -2 * v0.stretchK;
 			v0.q = inverseTorque(segD, b);
-			v0.q = normalize(v0.q);
 			verts[tid].q = v0.q;
 		}
 	}

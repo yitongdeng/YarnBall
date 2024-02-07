@@ -74,7 +74,6 @@ namespace YarnBall {
 	private:
 		MetaData* d_meta = nullptr;
 		bool initialized = false;
-		size_t frame = 0;
 
 		// GL stuff
 		Kitten::Mesh* cylMesh = nullptr;
