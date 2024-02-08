@@ -49,8 +49,8 @@ namespace YarnBall {
 			// Special connections energy
 			if (v0.connectionIndex >= 0) {
 				vec3 p0 = verts[v0.connectionIndex].pos + dxs[v0.connectionIndex];
-				f -= 4 * v0.kStretch * (v0.pos - p0);
-				H += mat3(4 * v0.kStretch);
+				f -= 4 * v0.kStretch * (v0.pos - p0 + damping * dx);
+				H += mat3(4 * (1 + damping) * v0.kStretch);
 			}
 
 			// Prev segment energy
