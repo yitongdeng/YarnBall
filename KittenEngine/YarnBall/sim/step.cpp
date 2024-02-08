@@ -8,7 +8,7 @@ namespace YarnBall {
 		meta.h = h;
 		meta.time += h;
 
-		meta.detectionRadius = meta.radius + meta.barrierThickness;
+		meta.detectionRadius = meta.radius + 0.5f * meta.barrierThickness;
 		meta.colGridSize = 0.5f * meta.detectionScaler * length(vec2(meta.maxSegLen + 2 * meta.detectionRadius, 2 * meta.detectionRadius));
 		meta.detectionRadius *= meta.detectionScaler;
 
