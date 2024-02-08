@@ -11,8 +11,9 @@ namespace YarnBall {
 		segBase->setInt("numVerts", meta.numVerts);
 		segForward->setInt("numVerts", meta.numVerts);
 
-		segBase->setFloat("radius", meta.radius);
-		segForward->setFloat("radius", meta.radius);
+		float r = meta.radius + 0.5f * meta.barrierThickness;
+		segBase->setFloat("radius", r);
+		segForward->setFloat("radius", r);
 
 		Kit::renderInstancedForward(cylMesh, meta.numVerts - 1, segBase, segForward);
 	}

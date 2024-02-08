@@ -33,8 +33,8 @@ namespace YarnBall {
 		Kit::Rotor q;		// Rotation
 		vec4 qRest;			// Resting rotation
 
-		float bendK;		// Bending stiffness
-		float stretchK;		// Stretching stiffness
+		float kBend;		// Bending stiffness
+		float kStretch;		// Stretching stiffness
 		int connectionIndex;// Index of connected node -1 if none. (Used to connect vertices)
 		uint32_t flags;		// Flags see VertexFlags
 	} Vertex;
@@ -76,6 +76,7 @@ namespace YarnBall {
 		float radius;			// Yarn radius
 		float barrierThickness;	// Collision energy barrier thickness
 		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
+		float kCollision;		// Stiffness of the collision
 		int collisionPeriod;	// The number of frames in between to check for collisions. -1 to turn off collisions
 		int hashTableSize;		// Size of the hash table (automatically set)
 	} MetaData;
@@ -93,6 +94,7 @@ namespace YarnBall {
 		MetaData meta;
 		float maxH = 1e-3;		// Largest time step allowed
 		int lastErrorCode = ERROR_NONE;
+		int lastWarningCode = ERROR_NONE;
 		bool printErrors = true;
 
 	private:

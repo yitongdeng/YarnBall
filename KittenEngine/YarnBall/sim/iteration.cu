@@ -26,9 +26,12 @@ namespace YarnBall {
 			verts[tid].vel = verts[tid].pos + dx + (h * h) * g;
 
 			// Compute initial guess
-			vec3 a = (vel - lastVel) / data->lastH;
-			float s = clamp(dot(a, g) / length2(g), 0.f, 1.f);
-			dx += (h * h * s) * g;
+			float g2 = length2(g);
+			if (g2 > 0) {
+				vec3 a = (vel - lastVel) / data->lastH;
+				float s = clamp(dot(a, g) / g2, 0.f, 1.f);
+				dx += (h * h * s) * g;
+			}
 		}
 
 		data->d_dx[tid] = dx;

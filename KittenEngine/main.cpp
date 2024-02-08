@@ -83,20 +83,27 @@ void initScene() {
 	camera.angle = vec2(30, 30);
 
 	if (true) {
-		constexpr int numVerts = 32;
+		constexpr int numVerts = 64;
 		sim = new YarnBall::Sim(numVerts);
 
-		for (size_t i = 0; i < numVerts; i++) {
+		for (size_t i = 0; i < 32; i++)
 			sim->verts[i].pos = vec3(0.01f * i, (i % 2) * 0.01f, 0);
-		}
+		for (size_t i = 0; i < 32; i++)
+			sim->verts[i + 32].pos = vec3(0.12f, -0.05, 0.01f * i - 0.16f);
 
-		sim->verts[0].invMass = 0;
+
+		sim->verts[0].invMass = sim->verts[32].invMass = sim->verts[63].invMass = 0;
 		sim->verts[0].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
+		sim->verts[31].flags = 0;
+
+		// sim->verts[55].invMass = 0;
 
 		sim->configure();
 		sim->setKBend(0.001);
 		sim->setKStretch(1e1);
 		sim->upload();
+
+		// sim->meta.collisionPeriod = -1;
 
 		sim->meta.radius = 0.002f;
 		// sim->maxH = 1 / 30.f;

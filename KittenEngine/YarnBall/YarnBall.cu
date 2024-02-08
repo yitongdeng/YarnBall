@@ -13,8 +13,11 @@ namespace YarnBall {
 		meta.h = maxH;
 		meta.drag = 0.2;
 		meta.damping = 1e-5;
-		meta.radius = 0.002;
-		meta.barrierThickness = 0.002;
+
+		meta.radius = 0.001;
+		meta.barrierThickness = 0.003;
+
+		meta.kCollision = 0.1;
 		meta.detectionScaler = 2.f;
 		meta.frictionCoeff = 0.5f;
 		meta.time = 0.f;
@@ -27,8 +30,8 @@ namespace YarnBall {
 		for (size_t i = 0; i < numVerts; i++) {
 			verts[i].invMass = verts[i].lRest = 1;
 			verts[i].vel = vec3(0);
-			verts[i].bendK = 5.f;
-			verts[i].stretchK = 100.f;
+			verts[i].kBend = 5.f;
+			verts[i].kStretch = 100.f;
 			verts[i].connectionIndex = -1;
 			verts[i].flags = (uint32_t)VertexFlags::hasNext;
 		}
@@ -101,7 +104,6 @@ namespace YarnBall {
 		}
 
 		// Init rest orientation
-		// Also quickly make sure flags are set properly
 		for (int i = 0; i < numVerts - 1; i++) {
 			auto& v0 = verts[i];
 			auto& v1 = verts[i + 1];
@@ -113,7 +115,7 @@ namespace YarnBall {
 
 		// Init meta
 		cudaMalloc(&d_meta, sizeof(MetaData));
-		cudaMalloc(&d_error, sizeof(int));
+		cudaMalloc(&d_error, 2 * sizeof(int));
 		cudaMalloc(&meta.d_dx, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_lastVels, sizeof(vec3) * numVerts);
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
@@ -129,28 +131,28 @@ namespace YarnBall {
 		cudaDeviceSynchronize();
 	}
 
-	void Sim::setKStretch(float stretchK) {
+	void Sim::setKStretch(float kStretch) {
 		if (!d_meta) throw std::runtime_error("No rest length. Must call configure()");
 
 		// Multiplied by rest length to make energy density consistent.
 		// Each segment has l * E energy, where E = C.k.C
-		// The l is moved into the stretchK
+		// The l is moved into the kStretch
 		for (int i = 0; i < meta.numVerts; i++)
-			verts[i].stretchK = stretchK * verts[i].lRest;
+			verts[i].kStretch = kStretch * verts[i].lRest;
 	}
 
-	void Sim::setKBend(float bendK) {
+	void Sim::setKBend(float kBend) {
 		if (!d_meta) throw std::runtime_error("No rest length. Must call configure()");
 
 		// Scaled by the 4 below
-		bendK *= 4;
+		kBend *= 4;
 
 		// Divded by rest length to make energy density consistent.
 		// Each segment has l * E energy, where E = C.k.C
-		// The l is moved into the bendK, but we also cheated because the darboux vectors
+		// The l is moved into the kBend, but we also cheated because the darboux vectors
 		// in C should have been scaled by 2/l. So in total we end up dividing once.
 		for (int i = 0; i < meta.numVerts; i++)
-			verts[i].bendK = bendK / verts[i].lRest;
+			verts[i].kBend = kBend / verts[i].lRest;
 	}
 
 	void Sim::uploadMeta() {

@@ -16,7 +16,7 @@ namespace YarnBall {
 		const vec3 p0 = verts[tid].pos;
 		const vec3 p1 = verts[tid + 1].pos;
 		if (length2(p1 - p0) > errorRadius2)
-			*errorReturn = Sim::WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER;
+			errorReturn[1] = Sim::WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER;
 
 		const vec3 pos = 0.5f * (p0 + p1);
 		const ivec3 cell = Kitten::getCell(pos, data->colGridSize);
@@ -49,11 +49,14 @@ namespace YarnBall {
 
 		vec3 p0 = verts[tid].pos;
 		vec3 p1 = verts[tid + 1].pos;
+		bool hasLower = !(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasPrev);
 
-		float r2 = data->detectionRadius;
+		float r2 = 2 * data->detectionRadius;
 		r2 *= r2;
-		float mr2 = data->radius;
+		float mr2 = 2 * data->radius;
 		mr2 *= mr2;
+
+		const float invb = 1 / data->barrierThickness;
 
 		Collision col;
 		int numCols = 0;
@@ -76,17 +79,23 @@ namespace YarnBall {
 							vec3 op1 = verts[col.oid + 1].pos;
 
 							col.uv = Kit::lineClosestPoints(p0, p1, op0, op1);
-							col.uv = clamp(col.uv, vec2(0), vec2(1));
-							col.normal = mix(op0, op1, col.uv.y) - mix(p0, p1, col.uv.x);
-							float d2 = Kit::length2(col.normal);
+							// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
+							if ((hasLower || col.uv.x > 0) && (!(bool)(verts[col.oid].flags & (uint32_t)VertexFlags::hasPrev) || col.uv.y > 0)) {
 
-							if (d2 >= mr2) {	// First check that penetration isnt beyond the barrier energy.
-								if (d2 < r2) {	// Then check if the collision is close enough to be considered.
+								col.uv = clamp(col.uv, vec2(0), vec2(1));
+								col.normal = mix(p0, p1, col.uv.x) - mix(op0, op1, col.uv.y);
+								float d2 = Kit::length2(col.normal);
+
+								if (d2 < r2) {
+									if (d2 < mr2) // Report interpenetration
+										errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
 									if (numCols == MAX_COLLISIONS_PER_SEGMENT) {
-										*errorReturn = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
+										errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
 										return;
 									}
-									col.normal *= inversesqrt(d2);
+
+									// Prescale the normal by invb to simplify the math later on
+									col.normal *= inversesqrt(d2) * invb;
 
 									// Add entry to collision list
 									// This is getting executed by the opposing segment in the same way. 
@@ -95,7 +104,6 @@ namespace YarnBall {
 									numCols++;
 								}
 							}
-							else *errorReturn = Sim::WARNING_SEGMENT_INTERPENETRATION;
 						}
 
 						// Check next entry

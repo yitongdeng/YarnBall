@@ -18,12 +18,17 @@ namespace YarnBall {
 
 	__global__ void cosseratItr(MetaData* data) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-		if (tid >= data->numVerts) return;
+		const int numVerts = data->numVerts;
+		if (tid >= numVerts) return;
 
 		const float h = data->h;
 		const float damping = data->damping / h;
+		const float kCol = data->kCollision;
 		auto verts = data->d_verts;
 		auto dxs = data->d_dx;
+		auto collisions = data->d_collisions;
+
+		float radius = 2 * data->radius / data->barrierThickness;
 
 		vec3 segD;
 		Vertex v0 = verts[tid];
@@ -41,28 +46,77 @@ namespace YarnBall {
 
 			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
 				vec3 p0 = verts[tid - 1].pos + dxs[tid - 1];
-				float invl = 1 / verts[tid - 1].lRest;
-				vec3 c = (v0.pos - p0) * invl - verts[tid - 1].q * vec3(1, 0, 0);
 
-				float k = verts[tid - 1].stretchK * invl;
-				float d = k * invl;
-				f += -k * c - (damping * d) * dx;
-				H += mat3((1 + damping) * d);
+				// Cosserat stretching energy
+				{
+					float invl = 1 / verts[tid - 1].lRest;
+					vec3 c = (v0.pos - p0) * invl - verts[tid - 1].q * vec3(1, 0, 0);
+
+					float k = verts[tid - 1].kStretch * invl;
+					float d = k * invl;
+					f += -k * c - (damping * d) * dx;
+					H += mat3((1 + damping) * d);
+				}
+
+				// Collision energy of the previous segment
+				const int numCols = data->d_numCols[tid - 1];
+				for (int i = 0; i < numCols; i++) {
+					Collision col = collisions[tid - 1 + i * numVerts];
+
+					// Compute contact points
+					vec3 pos = mix(p0, v0.pos, col.uv.x);
+					vec3 opos = mix(verts[col.oid].pos + dxs[col.oid],
+						verts[col.oid + 1].pos + dxs[col.oid + 1], col.uv.y);
+
+					// Compute penetration
+					float d = dot(col.normal, pos - opos) - radius;
+					if (d <= 0 || d > 1) continue;	// Either degenerate or not touching
+
+					// IPC barrier energy
+					float invd = 1 / d;
+					float logd = log(d);
+					float dH = (-3 + (2 + invd) * invd - 2 * logd) * Kit::pow2(col.uv.x) * kCol;
+					f += (-(1 - d) * (d - 1 + 2 * d * logd) * col.uv.x * invd * kCol) * col.normal - (dH * dot(col.normal, dx)) * col.normal;
+					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
+				}
 			}
 
 			if (v0.flags & (uint32_t)VertexFlags::hasNext) {
 				vec3 p1 = verts[tid + 1].pos + dxs[tid + 1];
-				float invl = 1 / v0.lRest;
-				segD = (p1 - v0.pos) * invl;
-				vec3 c = segD - v0.q * vec3(1, 0, 0);
 
-				float k = v0.stretchK * invl;
-				float d = k * invl;
-				f += k * c - (damping * d) * dx;
-				H += mat3((1 + damping) * d);
+				// Cosserat stretching energy
+				{
+					float invl = 1 / v0.lRest;
+					segD = (p1 - v0.pos) * invl;			// Save this for later
+					vec3 c = segD - v0.q * vec3(1, 0, 0);
 
-				// Collision energy
+					float k = v0.kStretch * invl;
+					float d = k * invl;
+					f += k * c - (damping * d) * dx;
+					H += mat3((1 + damping) * d);
+				}
 
+				// Collision energy of this segment
+				const int numCols = data->d_numCols[tid];
+				for (int i = 0; i < numCols; i++) {
+					Collision col = collisions[tid + i * numVerts];
+
+					// Compute contact points
+					vec3 pos = mix(v0.pos, p1, col.uv.x);
+					vec3 opos = mix(verts[col.oid].pos + dxs[col.oid],
+						verts[col.oid + 1].pos + dxs[col.oid + 1], col.uv.y);
+
+					// Compute penetration
+					float d = dot(col.normal, pos - opos) - radius;
+					if (d <= 0 || d > 1) continue;	// Either degenerate or not touching
+
+					// IPC barrier energy
+					float invd = 1 / d;
+					float logd = log(d);
+					float dH = (-3 + (2 + invd) * invd - 2 * logd) * Kit::pow2(1 - col.uv.x) * kCol;
+					f += (-(1 - d) * (d - 1 + 2 * d * logd) * (1 - col.uv.x) * invd * kCol) * col.normal - (dH * dot(col.normal, dx)) * col.normal;
+					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
+				}
 			}
 
 			// Local solve and update
@@ -81,16 +135,16 @@ namespace YarnBall {
 				auto qRest = Kit::Rotor(verts[tid - 1].qRest);
 				auto qq = verts[tid - 1].q;
 				float s = dot((qq.inverse() * v0.q).v, qRest.v) > 0 ? 1 : -1;
-				b -= (verts[tid - 1].bendK * s) * (qq * qRest).v;
+				b -= (verts[tid - 1].kBend * s) * (qq * qRest).v;
 			}
 
 			if (verts[tid + 1].flags & (uint32_t)VertexFlags::hasNext) {
 				auto qq = verts[tid + 1].q;
 				float s = dot((v0.q.inverse() * qq).v, v0.qRest) > 0 ? 1 : -1;
-				b -= (v0.bendK * s) * (verts[tid + 1].q * Kit::Rotor(v0.qRest).inverse()).v;
+				b -= (v0.kBend * s) * (verts[tid + 1].q * Kit::Rotor(v0.qRest).inverse()).v;
 			}
 
-			segD *= -2 * v0.stretchK;
+			segD *= -2 * v0.kStretch;
 			v0.q = inverseTorque(segD, b);
 			verts[tid].q = v0.q;
 		}
