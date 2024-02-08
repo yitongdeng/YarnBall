@@ -47,6 +47,14 @@ namespace YarnBall {
 			// vel has to overwritten to contain y
 			vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - v0.pos);
 
+			// Special connections energy
+			if (v0.connectionIndex >= 0) {
+				vec3 p0 = verts[v0.connectionIndex].pos + dxs[v0.connectionIndex];
+				f -= 4 * v0.kStretch * (v0.pos - p0);
+				H += mat3(4 * v0.kStretch);
+			}
+
+			// Prev segment energy
 			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
 				vec3 p0 = verts[tid - 1].pos + dxs[tid - 1];
 
@@ -84,6 +92,7 @@ namespace YarnBall {
 				}
 			}
 
+			// Next segment energy
 			if (v0.flags & (uint32_t)VertexFlags::hasNext) {
 				// Cosserat stretching energy
 				{
