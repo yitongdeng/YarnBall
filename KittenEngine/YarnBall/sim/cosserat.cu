@@ -66,8 +66,10 @@ namespace YarnBall {
 			}
 
 			// Local solve and update
-			dx += inverse(H) * f;
+			vec3 ddx = inverse(H) * f;
+			dx += ddx;
 			dxs[tid] = dx;
+			segD -= ddx;
 		}
 
 		// Update segment orientation
