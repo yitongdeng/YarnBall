@@ -51,7 +51,7 @@ namespace YarnBall {
 		vec3* d_lastVels;		// Velocity from the last frame
 
 		int* d_hashTable;		// Hash table for collision detection
-		int* d_numCols;			// Number of collisions for each segment
+		uint16_t* d_numCols;	// Number of collisions for each segment
 		Collision* d_collisions;// Collisions
 
 		vec3 gravity;			// Gravity
@@ -73,8 +73,8 @@ namespace YarnBall {
 		float numVerts;			// Number of vertices
 		float maxSegLen;		// Largest segment length
 
-		float radius;			// Yarn radius
-		float barrierThickness;	// Collision energy barrier thickness
+		float radius;			// Yarn radius. Note that this is the minimum radius. The actual radius is r + 0.5 * barrierThickness
+		float barrierThickness;	// Collision energy barrier thickness. This is the barrier between yarns.
 		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
 		float kCollision;		// Stiffness of the collision
 		int collisionPeriod;	// The number of frames in between to check for collisions. -1 to turn off collisions

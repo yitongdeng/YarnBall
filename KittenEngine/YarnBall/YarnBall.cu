@@ -120,7 +120,7 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_lastVels, sizeof(vec3) * numVerts);
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_hashTable, sizeof(int) * meta.hashTableSize);
-		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
+		cudaMalloc(&meta.d_numCols, sizeof(uint16_t) * numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
