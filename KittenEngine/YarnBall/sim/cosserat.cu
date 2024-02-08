@@ -30,8 +30,11 @@ namespace YarnBall {
 
 		float radius = 2 * data->radius / data->barrierThickness;
 
-		vec3 segD;
 		Vertex v0 = verts[tid];
+		vec3 p1;
+		if (v0.flags & (uint32_t)VertexFlags::hasNext)
+			p1 = verts[tid + 1].pos + dxs[tid + 1];
+
 		// Linear change
 		if (v0.invMass != 0) {
 			// vec3 y = v0.pos + h * v0.vel + h * h * data->gravity;
@@ -82,13 +85,10 @@ namespace YarnBall {
 			}
 
 			if (v0.flags & (uint32_t)VertexFlags::hasNext) {
-				vec3 p1 = verts[tid + 1].pos + dxs[tid + 1];
-
 				// Cosserat stretching energy
 				{
 					float invl = 1 / v0.lRest;
-					segD = (p1 - v0.pos) * invl;			// Save this for later
-					vec3 c = segD - v0.q * vec3(1, 0, 0);
+					vec3 c = (p1 - v0.pos) * invl - v0.q * vec3(1, 0, 0);
 
 					float k = v0.kStretch * invl;
 					float d = k * invl;
@@ -122,15 +122,18 @@ namespace YarnBall {
 			// Local solve and update
 			vec3 ddx = inverse(H) * f;
 			dx += ddx;
+			v0.pos += ddx;
 			dxs[tid] = dx;
-			segD -= ddx;
 		}
 
 		// Update segment orientation
 		// This is done assuming some very very large invMoment (i.e. no inertia so static equilibrium)
 		if (!(bool)(v0.flags & (uint32_t)VertexFlags::fixOrientation) != 0 && (v0.flags & (uint32_t)VertexFlags::hasNext)) {
-			vec4 b(0);
+			// All this is from an alternate derivation from forced-base hair interpolation.
+			v0.pos = (p1 - v0.pos) / v0.lRest;
+			v0.pos *= -2 * v0.kStretch;
 
+			vec4 b(0);
 			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
 				auto qRest = Kit::Rotor(verts[tid - 1].qRest);
 				auto qq = verts[tid - 1].q;
@@ -144,8 +147,7 @@ namespace YarnBall {
 				b -= (v0.kBend * s) * (verts[tid + 1].q * Kit::Rotor(v0.qRest).inverse()).v;
 			}
 
-			segD *= -2 * v0.kStretch;
-			v0.q = inverseTorque(segD, b);
+			v0.q = inverseTorque(v0.pos, b);
 			verts[tid].q = v0.q;
 		}
 	}
