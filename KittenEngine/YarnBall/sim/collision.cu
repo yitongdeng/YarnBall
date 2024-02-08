@@ -10,11 +10,12 @@ namespace YarnBall {
 		if (tid >= data->numVerts) return;
 
 		auto verts = data->d_verts;
+		auto dxs = data->d_dx;
 		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
 
 		// Get node pos and hash
-		const vec3 p0 = verts[tid].pos;
-		const vec3 p1 = verts[tid + 1].pos;
+		const vec3 p0 = verts[tid].pos + dxs[tid];
+		const vec3 p1 = verts[tid + 1].pos + dxs[tid + 1];
 		if (length2(p1 - p0) > errorRadius2)
 			errorReturn[1] = Sim::WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER;
 
@@ -39,16 +40,17 @@ namespace YarnBall {
 		if (tid >= numVerts) return;
 
 		auto verts = data->d_verts;
+		auto dxs = data->d_dx;
 		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
 
 		// Get node pos and hash
-		const vec3 pos = 0.5f * (verts[tid].pos + verts[tid + 1].pos);
+		const vec3 p0 = verts[tid].pos + dxs[tid];
+		const vec3 p1 = verts[tid + 1].pos + dxs[tid + 1];
+		const vec3 pos = 0.5f * (p0 + p1);
 		const ivec3 cell = Kitten::getCell(pos, data->colGridSize);
 		const int tSize = data->hashTableSize;
 		const int* table = data->d_hashTable;
 
-		vec3 p0 = verts[tid].pos;
-		vec3 p1 = verts[tid + 1].pos;
 		bool hasLower = !(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasPrev);
 
 		float r2 = 2 * data->detectionRadius;
@@ -75,8 +77,8 @@ namespace YarnBall {
 
 						// Discrete collision detection
 						if (col.oid != tid && col.oid != tid + 1 && col.oid != tid - 1) {
-							vec3 op0 = verts[col.oid].pos;
-							vec3 op1 = verts[col.oid + 1].pos;
+							vec3 op0 = verts[col.oid].pos + dxs[col.oid];
+							vec3 op1 = verts[col.oid + 1].pos + dxs[col.oid + 1];
 
 							col.uv = Kit::lineClosestPoints(p0, p1, op0, op1);
 							// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
