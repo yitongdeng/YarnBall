@@ -43,7 +43,7 @@ namespace YarnBall {
 
 			// Hessian H
 			mat3 H = mat3(1 / (v0.invMass * h * h));
-			// vel has to overwritten to contain y
+			// vel has been overwritten to contain y
 			vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - v0.pos);
 
 			// Special connections energy
