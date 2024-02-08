@@ -37,7 +37,6 @@ namespace YarnBall {
 
 		// Linear change
 		if (v0.invMass != 0) {
-			// vec3 y = v0.pos + h * v0.vel + h * h * data->gravity;
 			vec3 dx = dxs[tid];
 
 			v0.pos += dx;
