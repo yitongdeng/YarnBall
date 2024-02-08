@@ -14,10 +14,13 @@ namespace YarnBall {
 		meta.drag = 0.2;
 		meta.damping = 1e-5;
 		meta.radius = 0.002;
+		meta.barrierThickness = 0.002;
+		meta.detectionScaler = 2.f;
 		meta.frictionCoeff = 0.5f;
 		meta.time = 0.f;
 		meta.collisionPeriod = 1;
 		meta.numItr = 4;
+		meta.hashTableSize = max(1024, numVerts * COLLISION_HASH_RATIO) + 17;
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
@@ -39,12 +42,18 @@ namespace YarnBall {
 		if (d_meta) {
 			cudaFree(meta.d_dx);
 			cudaFree(meta.d_lastVels);
+			cudaFree(meta.d_hashTable);
+			cudaFree(meta.d_numCols);
+			cudaFree(meta.d_collisions);
 			cudaFree(d_meta);
 		}
+		if (d_error) cudaFree(d_error);
 	}
 
 	void Sim::configure(float density) {
 		const int numVerts = meta.numVerts;
+
+		meta.maxSegLen = 0;
 
 		// Init mass and orientation
 		for (int i = 0; i < numVerts; i++) {
@@ -87,6 +96,8 @@ namespace YarnBall {
 				v.invMass *= 1 / mass;
 			else
 				v.invMass = 0;
+
+			meta.maxSegLen = max(meta.maxSegLen, v.lRest);
 		}
 
 		// Init rest orientation
@@ -102,9 +113,14 @@ namespace YarnBall {
 
 		// Init meta
 		cudaMalloc(&d_meta, sizeof(MetaData));
+		cudaMalloc(&d_error, sizeof(int));
 		cudaMalloc(&meta.d_dx, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_lastVels, sizeof(vec3) * numVerts);
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
+		cudaMalloc(&meta.d_hashTable, sizeof(int) * meta.hashTableSize);
+		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
+		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
+
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
 		meta.d_verts = (Vertex*)vertBuffer->cudaPtr;
 

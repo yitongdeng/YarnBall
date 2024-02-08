@@ -1,0 +1,117 @@
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
+#include <device_atomic_functions.h>
+
+#include "../YarnBall.h"
+
+namespace YarnBall {
+	__global__ void buildTable(MetaData* data, float errorRadius2, int* errorReturn) {
+		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+		if (tid >= data->numVerts) return;
+
+		auto verts = data->d_verts;
+		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
+
+		// Get node pos and hash
+		const vec3 p0 = verts[tid].pos;
+		const vec3 p1 = verts[tid + 1].pos;
+		if (length2(p1 - p0) > errorRadius2)
+			*errorReturn = Sim::WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER;
+
+		const vec3 pos = 0.5f * (p0 + p1);
+		const ivec3 cell = Kitten::getCell(pos, data->colGridSize);
+		const int hash = Kitten::getCellHash(cell);
+
+		// Insert
+		const int* table = data->d_hashTable;
+		const int tSize = data->hashTableSize;
+		int entry = (hash % tSize + tSize) % tSize;
+		while (true) {
+			if (!atomicCAS((int*)&table[entry], 0, (int)tid))
+				break;
+			entry = (entry + 1) % tSize;
+		}
+	}
+
+	__global__ void buildCollisionList(MetaData* data, int* errorReturn) {
+		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+		const int numVerts = data->numVerts;
+		if (tid >= numVerts) return;
+
+		auto verts = data->d_verts;
+		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
+
+		// Get node pos and hash
+		const vec3 pos = 0.5f * (verts[tid].pos + verts[tid + 1].pos);
+		const ivec3 cell = Kitten::getCell(pos, data->colGridSize);
+		const int tSize = data->hashTableSize;
+		const int* table = data->d_hashTable;
+
+		vec3 p0 = verts[tid].pos;
+		vec3 p1 = verts[tid + 1].pos;
+
+		float r2 = data->detectionRadius;
+		r2 *= r2;
+		float mr2 = data->radius;
+		mr2 *= mr2;
+
+		Collision col;
+		int numCols = 0;
+		const auto collisions = data->d_collisions;
+		// Visit every cell in the 3x3x3 neighborhood
+		for (ivec3 d(-1); d.x < 2; d.x++)
+			for (d.y = -1; d.y < 2; d.y++)
+				for (d.z = -1; d.z < 2; d.z++) {
+					// Retrieve entries
+					const ivec3 ncell = cell + d;
+					const int hash = Kitten::getCellHash(ncell);
+					int entry = (hash % tSize + tSize) % tSize;
+					while (true) {
+						col.oid = table[entry];
+						if (col.oid == 0) break;
+
+						// Discrete collision detection
+						if (col.oid != tid && col.oid != tid + 1 && col.oid != tid - 1) {
+							vec3 op0 = verts[col.oid].pos;
+							vec3 op1 = verts[col.oid + 1].pos;
+
+							col.uv = Kit::lineClosestPoints(p0, p1, op0, op1);
+							col.uv = clamp(col.uv, vec2(0), vec2(1));
+							col.normal = mix(op0, op1, col.uv.y) - mix(p0, p1, col.uv.x);
+							float d2 = Kit::length2(col.normal);
+
+							if (d2 >= mr2) {	// First check that penetration isnt beyond the barrier energy.
+								if (d2 < r2) {	// Then check if the collision is close enough to be considered.
+									if (numCols == MAX_COLLISIONS_PER_SEGMENT) {
+										*errorReturn = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
+										return;
+									}
+									col.normal *= inversesqrt(d2);
+
+									// Add entry to collision list
+									// This is getting executed by the opposing segment in the same way. 
+									// So theoretically, this thread only needs to add itself (pray to the floating point gods)
+									collisions[tid + numVerts * numCols] = col;
+									numCols++;
+								}
+							}
+							else *errorReturn = Sim::WARNING_SEGMENT_INTERPENETRATION;
+						}
+
+						// Check next entry
+						entry = (entry + 1) % tSize;
+					}
+				}
+
+		data->d_numCols[tid] = numCols;
+	}
+
+	void Sim::detectCollisions() {
+		// Rebuild hashmap
+		cudaMemset(meta.d_hashTable, 0, sizeof(int) * meta.hashTableSize);
+		buildTable << <(meta.numVerts + 127) / 128, 128 >> > (d_meta, meta.maxSegLen * meta.detectionScaler, d_error);
+
+		// Build collision list
+		buildCollisionList << <(meta.numVerts + 127) / 128, 128 >> > (d_meta, d_error);
+	}
+}

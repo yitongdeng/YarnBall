@@ -39,7 +39,6 @@ namespace YarnBall {
 			// vel has to overwritten to contain y
 			vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - v0.pos);
 
-			// Simple springs
 			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
 				vec3 p0 = verts[tid - 1].pos + dxs[tid - 1];
 				float invl = 1 / verts[tid - 1].lRest;
@@ -61,10 +60,13 @@ namespace YarnBall {
 				float d = k * invl;
 				f += k * c - (damping * d) * dx;
 				H += mat3((1 + damping) * d);
+
+				// Collision energy
+
 			}
 
+			// Local solve and update
 			dx += inverse(H) * f;
-
 			dxs[tid] = dx;
 		}
 

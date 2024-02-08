@@ -237,5 +237,8 @@
     <CudaCompile Include="YarnBall\YarnBall.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
+    <CudaCompile Include="YarnBall\sim\collision.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

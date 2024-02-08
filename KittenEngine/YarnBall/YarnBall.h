@@ -10,6 +10,10 @@
 namespace YarnBall {
 	using namespace glm;
 
+	// This should really NEVER be exceeded.
+	constexpr int MAX_COLLISIONS_PER_SEGMENT = 16;
+	constexpr int COLLISION_HASH_RATIO = 10;
+
 	enum class VertexFlags {
 		hasPrev = 1,		// Whether the vertex has a previous vertex
 		hasNext = 2,		// Whether the vertex has a next vertex
@@ -36,9 +40,19 @@ namespace YarnBall {
 	} Vertex;
 
 	typedef struct {
+		vec2 uv;			// UV coordinates of the collision. uv.x is the current segment. uv.y is the other segment
+		int oid;			// Indices of the other segment
+		vec3 normal;		// Normal of the collision
+	} Collision;
+
+	typedef struct {
 		Vertex* d_verts;		// Device vertex array pointer
-		vec3* d_dx;				// Temporary delta position iterants. Stored as delta for precision.
+		vec3* d_dx;				// Temporary delta position iterants. Stored as deltas for precision.
 		vec3* d_lastVels;		// Velocity from the last frame
+
+		int* d_hashTable;		// Hash table for collision detection
+		int* d_numCols;			// Number of collisions for each segment
+		Collision* d_collisions;// Collisions
 
 		vec3 gravity;			// Gravity
 		int numItr;				// Number of iterations used per time step
@@ -49,30 +63,41 @@ namespace YarnBall {
 		float h;				// Time step (automatically set)
 		float lastH;			// Last time step
 		float time;				// Current time
+		float colGridSize;		// Collision hashmap grid size (automatically set)
+		float detectionRadius;	// Total detection radius of the yarn (automatically set)
 
 		float drag;				// Velocity decay
 		float damping;			// Damping forces
 		float frictionCoeff;	// Friction coefficient for contacts
 
-		int collisionPeriod;	// The number of frames in between to check for collisions. -1 to turn off collisions
 		float numVerts;			// Number of vertices
-		float radius;			// Yarn radius
-
-		float minRadius;		// The minimum yarn distance (radius) maintained in collisions
 		float maxSegLen;		// Largest segment length
-		float colGridSize;		// Collision grid size
+
+		float radius;			// Yarn radius
+		float barrierThickness;	// Collision energy barrier thickness
+		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
+		int collisionPeriod;	// The number of frames in between to check for collisions. -1 to turn off collisions
+		int hashTableSize;		// Size of the hash table (automatically set)
 	} MetaData;
 
 	class Sim {
 	public:
+		enum {
+			ERROR_NONE = 0,
+			ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED = 1,
+			WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER = 2,
+			WARNING_SEGMENT_INTERPENETRATION = 3
+		};
+
 		Vertex* verts;
-
 		MetaData meta;
-
 		float maxH = 1e-3;		// Largest time step allowed
+		int lastErrorCode = ERROR_NONE;
+		bool printErrors = true;
 
 	private:
 		MetaData* d_meta = nullptr;
+		int* d_error = nullptr;
 		bool initialized = false;
 
 		// GL stuff
@@ -112,6 +137,7 @@ namespace YarnBall {
 
 		void startIterate();
 		void endIterate();
+		void detectCollisions();
 		void iterateCosserat();
 		void iterateSpring();
 	};
