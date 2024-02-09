@@ -108,7 +108,7 @@ namespace YarnBall {
 
 						f1 *= fricMu * ff * col.uv.x / ul;
 						f -= f1 * u;
-						H += (-col.uv.x * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
+						H += (col.uv.x * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
 					}
 				}
 			}
@@ -159,7 +159,7 @@ namespace YarnBall {
 
 						f1 *= fricMu * ff * (1 - col.uv.x) / ul;
 						f -= f1 * u;
-						H += (-(1 - col.uv.x) * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
+						H += ((1 - col.uv.x) * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
 					}
 				}
 			}

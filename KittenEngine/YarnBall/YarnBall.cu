@@ -17,11 +17,11 @@ namespace YarnBall {
 		meta.radius = 0.001;
 		meta.barrierThickness = 0.003;
 
-		meta.kCollision = 0.1;
+		meta.kCollision = 1e-2;
 		meta.detectionScaler = 2.f;
-		meta.frictionCoeff = 0.01f;
+		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
-		meta.collisionPeriod = 1;
+		meta.collisionPeriod = 4;
 		meta.numItr = 4;
 		meta.hashTableSize = max(1024, numVerts * COLLISION_HASH_RATIO) + 17;
 
