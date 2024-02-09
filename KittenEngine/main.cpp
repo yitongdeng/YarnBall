@@ -90,7 +90,7 @@ void initScene() {
 			sim->verts[i].pos = vec3(0.01f * i, 0, 0);
 		// 	sim->verts[i].pos = vec3(0.01f * i, (i % 2) * 0.01f, 0);
 		for (size_t i = 0; i < 32; i++)
-			sim->verts[i + 32].pos = vec3(0.225f, -0.05, 0.01f * i - 0.16f);
+			sim->verts[i + 32].pos = vec3(0.16f, -0.05, 0.01f * i - 0.16f);
 
 		sim->verts[0].invMass = sim->verts[32].invMass = sim->verts[63].invMass = 0;
 		sim->verts[0].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;

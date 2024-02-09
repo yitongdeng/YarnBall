@@ -32,6 +32,8 @@ namespace YarnBall {
 		float radius = 2 * data->radius;
 
 		Vertex v0 = verts[tid];
+		// We need to store absolute position and position updates seperatly for floating point precision
+		// If we added these together, the update could be small enough to be rounded out, causing stability issues
 		vec3 p1, p1dx;
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
 			p1 = verts[tid + 1].pos;
@@ -135,14 +137,11 @@ namespace YarnBall {
 			dxs[tid] = dx;
 		}
 
-		// Save this for the quaternion update below
-		p1dx -= dx;
-
 		// Update segment orientation
 		// This is done assuming some very very large invMoment (i.e. no inertia so static equilibrium)
 		if (!(bool)(v0.flags & (uint32_t)VertexFlags::fixOrientation) != 0 && (v0.flags & (uint32_t)VertexFlags::hasNext)) {
 			// All this is from an alternate derivation from forced-base hair interpolation.
-			v0.pos = ((p1 - v0.pos) + p1dx) / v0.lRest;
+			v0.pos = ((p1 - v0.pos) + (p1dx - dx)) / v0.lRest;
 			v0.pos *= -2 * v0.kStretch;
 
 			vec4 b(0);
