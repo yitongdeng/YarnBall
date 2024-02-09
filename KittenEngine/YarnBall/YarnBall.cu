@@ -19,7 +19,7 @@ namespace YarnBall {
 
 		meta.kCollision = 0.1;
 		meta.detectionScaler = 2.f;
-		meta.frictionCoeff = 0.5f;
+		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
 		meta.collisionPeriod = 1;
 		meta.numItr = 4;

@@ -24,12 +24,13 @@ namespace YarnBall {
 		const float h = data->h;
 		const float damping = data->damping / h;
 		const float kCol = data->kCollision;
-		auto verts = data->d_verts;
-		auto dxs = data->d_dx;
-		auto collisions = data->d_collisions;
+		const auto verts = data->d_verts;
+		const auto dxs = data->d_dx;
+		const auto collisions = data->d_collisions;
 
 		const float invb = 1 / data->barrierThickness;
-		float radius = 2 * data->radius;
+		const float radius = 2 * data->radius;
+		const float fricMu = data->frictionCoeff;
 
 		Vertex v0 = verts[tid];
 		// We need to store absolute position and position updates seperatly for floating point precision
@@ -43,6 +44,7 @@ namespace YarnBall {
 		// Linear change
 		vec3 dx = dxs[tid];
 		if (v0.invMass != 0) {
+			const float fricE = 1e-2f * h;	// Friction epsilon dx theshold for static vs kinetic friction
 
 			// Hessian H
 			mat3 H = mat3(1 / (v0.invMass * h * h));
@@ -93,6 +95,21 @@ namespace YarnBall {
 					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * col.uv.x * invd * kCol * invb - dH * dot(col.normal, dx);
 					f += ff * col.normal;
 					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
+
+					// Friction
+					vec3 u = ddpos - dot(col.normal, ddpos) * col.normal;
+					float ul = length(u);
+					if (ul > 0) {
+						float f1 = 1;
+						if (ul < fricE) {
+							f1 = ul / fricE;
+							f1 = 2 * f1 - Kit::pow2(f1);
+						}
+
+						f1 = fricMu * ff * col.uv.x * f1 / ul;
+						f -= f1 * u;
+						H += (-col.uv.x * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
+					}
 				}
 			}
 
@@ -129,6 +146,21 @@ namespace YarnBall {
 					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * (1 - col.uv.x) * invd * kCol * invb - dH * dot(col.normal, dx);
 					f += ff * col.normal;
 					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
+
+					// Friction
+					vec3 u = ddpos - dot(col.normal, ddpos) * col.normal;
+					float ul = length(u);
+					if (ul > 0) {
+						float f1 = 1;
+						if (ul < fricE) {
+							f1 = ul / fricE;
+							f1 = 2 * f1 - Kit::pow2(f1);
+						}
+
+						f1 = fricMu * ff * (1 - col.uv.x) * f1 / ul;
+						f -= f1 * u;
+						H += (-(1 - col.uv.x) * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
+					}
 				}
 			}
 
