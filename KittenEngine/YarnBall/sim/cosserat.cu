@@ -92,8 +92,8 @@ namespace YarnBall {
 					float invd = 1 / d;
 					float logd = log(d);
 					float dH = (-3 + (2 + invd) * invd - 2 * logd) * Kit::pow2(col.uv.x) * kCol * invb * invb;
-					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * col.uv.x * invd * kCol * invb - dH * dot(col.normal, dx);
-					f += ff * col.normal;
+					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * col.uv.x * invd * kCol * invb;
+					f += (ff - dH * dot(col.normal, dx)) * col.normal;
 					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
 
 					// Friction
@@ -106,7 +106,7 @@ namespace YarnBall {
 							f1 = 2 * f1 - Kit::pow2(f1);
 						}
 
-						f1 = fricMu * ff * col.uv.x * f1 / ul;
+						f1 *= fricMu * ff * col.uv.x / ul;
 						f -= f1 * u;
 						H += (-col.uv.x * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
 					}
@@ -143,8 +143,8 @@ namespace YarnBall {
 					float invd = 1 / d;
 					float logd = log(d);
 					float dH = (-3 + (2 + invd) * invd - 2 * logd) * Kit::pow2(1 - col.uv.x) * kCol * invb * invb;
-					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * (1 - col.uv.x) * invd * kCol * invb - dH * dot(col.normal, dx);
-					f += ff * col.normal;
+					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * (1 - col.uv.x) * invd * kCol * invb;
+					f += (ff - dH * dot(col.normal, dx)) * col.normal;
 					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
 
 					// Friction
@@ -157,7 +157,7 @@ namespace YarnBall {
 							f1 = 2 * f1 - Kit::pow2(f1);
 						}
 
-						f1 = fricMu * ff * (1 - col.uv.x) * f1 / ul;
+						f1 *= fricMu * ff * (1 - col.uv.x) / ul;
 						f -= f1 * u;
 						H += (-(1 - col.uv.x) * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
 					}

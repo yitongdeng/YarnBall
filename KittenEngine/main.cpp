@@ -103,6 +103,8 @@ void initScene() {
 		sim->setKStretch(1e1);
 		sim->upload();
 
+
+
 		// sim->meta.collisionPeriod = -1;
 
 		sim->meta.radius = 0.002f;
