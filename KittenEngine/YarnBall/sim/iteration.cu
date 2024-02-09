@@ -23,7 +23,7 @@ namespace YarnBall {
 		if (verts[tid].invMass != 0) {
 			// Compute y (inertial + accel position)
 			// Store it in vel (The actual vel is no longer needed)
-			verts[tid].vel = verts[tid].pos + dx + (h * h) * g;
+			verts[tid].vel = dx + (h * h) * g;
 
 			// Compute initial guess
 			float g2 = length2(g);

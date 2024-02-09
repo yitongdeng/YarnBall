@@ -59,8 +59,6 @@ namespace YarnBall {
 		float mr2 = 2 * data->radius;
 		mr2 *= mr2;
 
-		const float invb = 1 / data->barrierThickness;
-
 		Collision col;
 		int numCols = 0;
 		const auto collisions = data->d_collisions;
@@ -99,8 +97,7 @@ namespace YarnBall {
 											return;
 										}
 
-										// Prescale the normal by invb to simplify the math later on
-										col.normal *= inversesqrt(d2) * invb;
+										col.normal *= inversesqrt(d2);
 
 										// Add entry to collision list
 										// This is getting executed by the opposing segment in the same way. 
