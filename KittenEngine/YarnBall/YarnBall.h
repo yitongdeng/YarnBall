@@ -70,7 +70,7 @@ namespace YarnBall {
 		float damping;			// Damping forces
 		float frictionCoeff;	// Friction coefficient for contacts
 
-		float numVerts;			// Number of vertices
+		int numVerts;			// Number of vertices
 		float maxSegLen;		// Largest segment length
 
 		float radius;			// Yarn radius. Note that this is the minimum radius. The actual radius is r + 0.5 * barrierThickness

@@ -6,7 +6,7 @@
 
 namespace YarnBall {
 	Sim::Sim(int numVerts) {
-		if (numVerts < 2) throw std::runtime_error("Too little vertices");
+		if (numVerts < 3) throw std::runtime_error("Too little vertices");
 
 		meta.numVerts = numVerts;
 		meta.gravity = vec3(0, -9.8, 0);

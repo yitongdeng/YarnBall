@@ -28,18 +28,28 @@ namespace YarnBall {
 			vec3 p2 = cmr[i + 1];
 			vec3 p3 = cmr[i + 2];
 
-			float segLen = glm::length(p2 - p1);
-			float t = lenLeft / segLen;
-			float step = tarSegLen / segLen;
+			// Estimate the arc length of the curve segment
+			constexpr int numSamples = 3;
+			vec3 lastPos = p1;
+			float arcLen = 0;
+			for (size_t j = 0; j < numSamples; j++) {
+				vec3 pos = Kit::cmrSpline(p0, p1, p2, p3, (j + 1) / (float)(numSamples + 1));
+				arcLen += glm::length(pos - lastPos);
+				lastPos = pos;
+			}
+			arcLen += glm::length(p2 - lastPos);
+
+			float t = lenLeft / arcLen;
+			float step = tarSegLen / arcLen;
 
 			// Set t limit. This is so we leave enough room for the last point
 			float maxT = (i < cmr.size() - 3) ? 1 : 1 - step;
 			while (t < maxT) {
-				t += step;
 				vec3 pos = Kit::cmrSpline(p0, p1, p2, p3, t);
 				resampled.push_back(pos);
+				t += step;
 			}
-			lenLeft = (t - 1) * segLen;
+			lenLeft = (t - 1) * arcLen;
 			i++;
 		}
 
@@ -96,9 +106,6 @@ namespace YarnBall {
 		}
 
 		fclose(pFile);
-
-		printf("Tot curves: %d\n", header.curveCount);
-		printf("Tot verts: %d\n", numVerts);
 
 		// Convert to simulation format
 		Sim* sim = new Sim(numVerts);

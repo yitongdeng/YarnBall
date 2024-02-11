@@ -31,7 +31,7 @@ void renderScene() {
 	}
 
 	Kit::lights[0].dir = -normalize(Kit::lights[0].pos);
-	Kit::projMat = glm::perspective(45.0f, Kit::getAspect(), 0.05f, 512.f);
+	Kit::projMat = glm::perspective(45.0f, Kit::getAspect(), 0.005f, 512.f);
 	Kit::viewMat = camera.getViewMatrix();
 
 	// Render everything
@@ -83,6 +83,7 @@ void initScene() {
 	camera.angle = vec2(30, 30);
 	if (false) {
 		sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
+		printf("Total verts: %d\n", sim->meta.numVerts);
 	}
 	else if (true) {
 		constexpr int numVerts = 64;
@@ -114,6 +115,7 @@ void initScene() {
 		printf("%f\n", sim->meta.radius);
 	}
 	camera.pos = sim->verts[0].pos;
+	camera.minDistance = 0.01f;
 
 	if (!sim) exit(-1);
 }
