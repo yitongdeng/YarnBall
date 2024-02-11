@@ -21,8 +21,8 @@ namespace YarnBall {
 		meta.detectionScaler = 2.f;
 		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
-		meta.collisionPeriod = 16;
-		meta.numItr = 16;
+		meta.collisionPeriod = 8;
+		meta.numItr = 8;
 		meta.hashTableSize = max(1024, numVerts * COLLISION_HASH_RATIO) + 17;
 
 		// Initialize vertices
@@ -190,11 +190,11 @@ namespace YarnBall {
 		cudaMemcpy(error, d_error, 2 * sizeof(int), cudaMemcpyDeviceToHost);
 		if (error[0] == ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED) {
 			if (printErrors) fprintf(stderr, "ERROR: MAX_COLLISIONS_PER_SEGMENT exceeded. Current simulation state may be corrupted!\n");
-			throw std::runtime_error("MAX_COLLISIONS_PER_SEGMENT exceeded");
+			//throw std::runtime_error("MAX_COLLISIONS_PER_SEGMENT exceeded");
 		}
 		else if (error[0] != ERROR_NONE) {
 			if (printErrors) fprintf(stderr, "ERROR: Undescript error %d\n", error[0]);
-			throw std::runtime_error("Indescript error");
+			//throw std::runtime_error("Indescript error");
 		}
 
 		if (printErrors)

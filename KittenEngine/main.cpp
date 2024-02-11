@@ -81,7 +81,7 @@ void initScene() {
 	Kit::ambientLight.col = vec4(0);
 
 	camera.angle = vec2(30, 30);
-	if (true) {
+	if (false) {
 		sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
 		printf("Total verts: %d\n", sim->meta.numVerts);
 		sim->printErrors = false;
@@ -107,7 +107,7 @@ void initScene() {
 		sim->setKBend(3e-9);
 		sim->setKStretch(1e-2);
 		sim->upload();
-
+		sim->meta.gravity = vec3(-3, -0.2, 0);
 		// sim->meta.collisionPeriod = -1;
 
 		// sim->maxH = 1 / 30.f;

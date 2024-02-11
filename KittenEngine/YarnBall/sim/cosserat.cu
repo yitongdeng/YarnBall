@@ -17,22 +17,27 @@ namespace YarnBall {
 	}
 
 	__global__ void cosseratItr(MetaData* data) {
-		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+		const int tid = (int)(blockIdx.x * 255 + threadIdx.x) - 1;
 		const int numVerts = data->numVerts;
-		if (tid >= numVerts) return;
+		if (tid >= numVerts || tid < 0) return;
 
 		const float h = data->h;
 		const float damping = data->damping / h;
-		const float kCol = data->kCollision;
 		const auto verts = data->d_verts;
 		const auto dxs = data->d_dx;
-		const auto collisions = data->d_collisions;
 
-		const float invb = 1 / data->barrierThickness;
-		const float radius = 2 * data->radius;
-		const float fricMu = data->frictionCoeff;
+		__shared__ vec3 forces[256];
+		__shared__ mat3 hessians[256];
 
+		// Linear change
 		Vertex v0 = verts[tid];
+
+		// Hessian H
+		mat3 H = mat3(1 / (v0.invMass * h * h));
+		// vel has been overwritten to contain y - pos
+		vec3 dx = dxs[tid];
+		vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - dx);
+
 		// We need to store absolute position and position updates seperatly for floating point precision
 		// If we added these together, the update could be small enough to be rounded out, causing stability issues
 		vec3 p1, p1dx;
@@ -41,129 +46,104 @@ namespace YarnBall {
 			p1dx = dxs[tid + 1];
 		}
 
-		// Linear change
-		vec3 dx = dxs[tid];
-		if (v0.invMass != 0) {
+		// Special connections energy
+		if (v0.connectionIndex >= 0) {
+			vec3 p0 = verts[v0.connectionIndex].pos;
+			vec3 p0dx = dxs[v0.connectionIndex];
+			f -= 4 * v0.kStretch * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
+			H += mat3(4 * (1 + damping) * v0.kStretch);
+		}
+
+		vec3 f2(0);
+		mat3 H2(0);
+
+		// Next segment energy
+		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
+
+			// Cosserat stretching energy
+			{
+				float invl = 1 / v0.lRest;
+				vec3 c = ((p1 - v0.pos) + (p1dx - dx)) * invl - v0.q * vec3(1, 0, 0);
+
+				float k = v0.kStretch * invl;
+				float d = k * invl;
+				f += k * c - (damping * d) * dx;
+				f2 += -k * c - (damping * d) * p1dx;
+				d *= 1 + damping;
+				H[0][0] += d; H[1][1] += d; H[2][2] += d;
+				H2[0][0] += d; H2[1][1] += d; H2[2][2] += d;
+			}
+
 			const float fricE = 1e-3f * h;	// Friction epsilon dx theshold for static vs kinetic friction
+			const float invb = 1 / data->barrierThickness;
+			const float radius = 2 * data->radius;
+			const float fricMu = data->frictionCoeff;
+			const auto collisions = data->d_collisions;
+			const float kCol = data->kCollision * invb;
 
-			// Hessian H
-			mat3 H = mat3(1 / (v0.invMass * h * h));
-			// vel has been overwritten to contain y - pos
-			vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - dx);
+			// Collision energy of this segment
+			const int numCols = data->d_numCols[tid];
+			for (int i = 0; i < numCols; i++) {
+				Collision col = collisions[tid + i * numVerts];
 
-			// Special connections energy
-			if (v0.connectionIndex >= 0) {
-				vec3 p0 = verts[v0.connectionIndex].pos;
-				vec3 p0dx = dxs[v0.connectionIndex];
-				f -= 4 * v0.kStretch * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
-				H += mat3(4 * (1 + damping) * v0.kStretch);
-			}
+				// Compute contact points
+				vec3 dpos = mix(v0.pos, p1, col.uv.x) - mix(verts[col.oid].pos, verts[col.oid + 1].pos, col.uv.y);
+				vec3 ddpos = mix(dx, p1dx, col.uv.x) - mix(dxs[col.oid], dxs[col.oid + 1], col.uv.y);
 
-			// Prev segment energy
-			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
-				vec3 p0 = verts[tid - 1].pos;
-				vec3 p0dx = dxs[tid - 1];
+				// Compute penetration
+				float d = (dot(col.normal, dpos + ddpos) - radius) * invb;
+				if (d <= 0 || d > 1) continue;	// Either degenerate or not touching
 
-				// Cosserat stretching energy
-				{
-					float invl = 1 / verts[tid - 1].lRest;
-					vec3 c = ((v0.pos - p0) + (dx - p0dx)) * invl - verts[tid - 1].q * vec3(1, 0, 0);
+				// IPC barrier energy
+				float invd = 1 / d;
+				float logd = log(d);
 
-					float k = verts[tid - 1].kStretch * invl;
-					float d = k * invl;
-					f += -k * c - (damping * d) * dx;
-					H += mat3((1 + damping) * d);
-				}
+				float dH = (-3 + (2 + invd) * invd - 2 * logd) * kCol * invb;
+				float ff = -(1 - d) * (d - 1 + 2 * d * logd) * invd * kCol;
+				f += (ff * (1 - col.uv.x) - damping * dH * Kit::pow2(1 - col.uv.x) * dot(col.normal, dx)) * col.normal;
+				mat3 op = glm::outerProduct(col.normal, col.normal);
+				H += ((1 + damping) * dH * Kit::pow2(1 - col.uv.x)) * op;
 
-				// Collision energy of the previous segment
-				const int numCols = data->d_numCols[tid - 1];
-				for (int i = 0; i < numCols; i++) {
-					Collision col = collisions[tid - 1 + i * numVerts];
+				f2 += (ff * col.uv.x - damping * dH * Kit::pow2(col.uv.x) * dot(col.normal, p1dx)) * col.normal;
+				H2 += ((1 + damping) * dH * Kit::pow2(col.uv.x)) * op;
 
-					// Compute contact points
-					vec3 dpos = mix(p0, v0.pos, col.uv.x) - mix(verts[col.oid].pos, verts[col.oid + 1].pos, col.uv.y);
-					vec3 ddpos = mix(p0dx, dx, col.uv.x) - mix(dxs[col.oid], dxs[col.oid + 1], col.uv.y);
-
-					// Compute penetration
-					float d = (dot(col.normal, dpos + ddpos) - radius) * invb;
-					if (d <= 0 || d > 1) continue;	// Either degenerate or not touching
-
-					// IPC barrier energy
-					float invd = 1 / d;
-					float logd = log(d);
-					float dH = (-3 + (2 + invd) * invd - 2 * logd) * Kit::pow2(col.uv.x) * kCol * invb * invb;
-					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * col.uv.x * invd * kCol * invb;
-					f += (ff - dH * dot(col.normal, dx)) * col.normal;
-					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
-
-					// Friction
-					vec3 u = ddpos - dot(col.normal, ddpos) * col.normal;
-					float ul = length(u);
-					if (ul > 0) {
-						float f1 = 1;
-						if (ul < fricE) {
-							f1 = ul / fricE;
-							f1 = 2 * f1 - Kit::pow2(f1);
-						}
-
-						f1 *= fricMu * ff * col.uv.x / ul;
-						f -= f1 * u;
-						H += (col.uv.x * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
+				// Friction
+				vec3 u = ddpos - dot(col.normal, ddpos) * col.normal;
+				float ul = length(u);
+				if (ul > 0) {
+					float f1 = 1;
+					if (ul < fricE) {
+						f1 = ul / fricE;
+						f1 = 2 * f1 - Kit::pow2(f1);
 					}
+
+					f1 *= fricMu * ff / ul;
+
+					op[0][0] -= 1; op[1][1] -= 1; op[2][2] -= 1;
+
+					f -= f1 * (1 - col.uv.x) * u;
+					H -= (Kit::pow2(1 - col.uv.x) * f1) * op;
+
+					f2 -= f1 * col.uv.x * u;
+					H2 -= (Kit::pow2(col.uv.x) * f1) * op;
 				}
 			}
+		}
 
-			// Next segment energy
-			if (v0.flags & (uint32_t)VertexFlags::hasNext) {
-				// Cosserat stretching energy
-				{
-					float invl = 1 / v0.lRest;
-					vec3 c = ((p1 - v0.pos) + (p1dx - dx)) * invl - v0.q * vec3(1, 0, 0);
+		forces[threadIdx.x] = f2;
+		hessians[threadIdx.x] = H2;
 
-					float k = v0.kStretch * invl;
-					float d = k * invl;
-					f += k * c - (damping * d) * dx;
-					H += mat3((1 + damping) * d);
-				}
+		__syncthreads();
 
-				// Collision energy of this segment
-				const int numCols = data->d_numCols[tid];
-				for (int i = 0; i < numCols; i++) {
-					Collision col = collisions[tid + i * numVerts];
+		// No reason to keep thread 0 going anymore
+		if (!threadIdx.x) return;
 
-					// Compute contact points
-					vec3 dpos = mix(v0.pos, p1, col.uv.x) - mix(verts[col.oid].pos, verts[col.oid + 1].pos, col.uv.y);
-					vec3 ddpos = mix(dx, p1dx, col.uv.x) - mix(dxs[col.oid], dxs[col.oid + 1], col.uv.y);
+		if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
+			f += forces[threadIdx.x - 1];
+			H += hessians[threadIdx.x - 1];
+		}
 
-					// Compute penetration
-					float d = (dot(col.normal, dpos + ddpos) - radius) * invb;
-					if (d <= 0 || d > 1) continue;	// Either degenerate or not touching
-
-					// IPC barrier energy
-					float invd = 1 / d;
-					float logd = log(d);
-					float dH = (-3 + (2 + invd) * invd - 2 * logd) * Kit::pow2(1 - col.uv.x) * kCol * invb * invb;
-					float ff = -(1 - d) * (d - 1 + 2 * d * logd) * (1 - col.uv.x) * invd * kCol * invb;
-					f += (ff - dH * dot(col.normal, dx)) * col.normal;
-					H += ((1 + damping) * dH) * glm::outerProduct(col.normal, col.normal);
-
-					// Friction
-					vec3 u = ddpos - dot(col.normal, ddpos) * col.normal;
-					float ul = length(u);
-					if (ul > 0) {
-						float f1 = 1;
-						if (ul < fricE) {
-							f1 = ul / fricE;
-							f1 = 2 * f1 - Kit::pow2(f1);
-						}
-
-						f1 *= fricMu * ff * (1 - col.uv.x) / ul;
-						f -= f1 * u;
-						H += ((1 - col.uv.x) * f1) * (mat3(1) - glm::outerProduct(col.normal, col.normal));
-					}
-				}
-			}
-
+		if (v0.invMass != 0) {
 			// Local solve and update
 			dx += inverse(H) * f;
 			dxs[tid] = dx;
@@ -195,9 +175,8 @@ namespace YarnBall {
 		}
 	}
 
-	constexpr int BLOCK_SIZE = 256;
 	void Sim::iterateCosserat() {
-		cosseratItr << <(meta.numVerts + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE >> > (d_meta);
+		cosseratItr << <(meta.numVerts + 254) / 255, 256 >> > (d_meta);
 		checkCudaErrors(cudaGetLastError());
 	}
 }
