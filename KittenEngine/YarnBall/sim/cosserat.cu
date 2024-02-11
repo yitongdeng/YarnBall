@@ -35,20 +35,20 @@ namespace YarnBall {
 		vec3 dx = dxs[tid];
 		vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - dx);
 
-		// We need to store absolute position and position updates seperatly for floating point precision
-		// If we added these together, the update could be small enough to be rounded out, causing stability issues
-		vec3 p1, p1dx;
-		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
-			p1 = verts[tid + 1].pos;
-			p1dx = dxs[tid + 1];
-		}
-
 		// Special connections energy
 		if (v0.connectionIndex >= 0) {
 			vec3 p0 = verts[v0.connectionIndex].pos;
 			vec3 p0dx = dxs[v0.connectionIndex];
 			f -= 4 * v0.kStretch * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
 			H += mat3(4 * (1 + damping) * v0.kStretch);
+		}
+
+		// We need to store absolute position and position updates seperatly for floating point precision
+		// If we added these together, the update could be small enough to be rounded out, causing stability issues
+		vec3 p1, p1dx;
+		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
+			p1 = verts[tid + 1].pos;
+			p1dx = dxs[tid + 1];
 		}
 
 		vec3 f2(0);
