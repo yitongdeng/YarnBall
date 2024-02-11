@@ -48,6 +48,12 @@ namespace Kitten {
 				data[i] = T(0);
 		}
 
+		KITTEN_FUNC_DECL SymMat<N, T>& operator=(const SymMat<N, T>& other) {
+			for (int i = 0; i < DATA_LEN; ++i)
+				data[i] = other.data[i];
+			return *this;
+		}
+
 		constexpr KITTEN_FUNC_DECL explicit operator mat_type() const {
 			mat_type m;
 			for (int i = 0; i < N; i++)
@@ -142,6 +148,18 @@ namespace Kitten {
 			for (int i = 0; i < DATA_LEN; i++)
 				result.data[i] = -data[i];
 			return result;
+		}
+
+		constexpr KITTEN_FUNC_DECL SymMat<N, T>& operator+=(const T scaler) {
+			for (int i = 0; i < N; i++)
+				data[i] += scaler;
+			return *this;
+		}
+
+		constexpr KITTEN_FUNC_DECL SymMat<N, T>& operator-=(const T scaler) {
+			for (int i = 0; i < N; i++)
+				data[i] -= scaler;
+			return *this;
 		}
 
 		constexpr KITTEN_FUNC_DECL SymMat<N, T>& operator+=(const SymMat<N, T>& other) {
