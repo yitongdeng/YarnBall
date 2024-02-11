@@ -81,7 +81,7 @@ void initScene() {
 	Kit::ambientLight.col = vec4(0);
 
 	camera.angle = vec2(30, 30);
-	if (false) {
+	if (true) {
 		sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
 		printf("Total verts: %d\n", sim->meta.numVerts);
 	}

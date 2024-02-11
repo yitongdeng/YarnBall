@@ -21,7 +21,7 @@ namespace YarnBall {
 		meta.detectionScaler = 2.f;
 		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
-		meta.collisionPeriod = 4;
+		meta.collisionPeriod = 16;
 		meta.numItr = 16;
 		meta.hashTableSize = max(1024, numVerts * COLLISION_HASH_RATIO) + 17;
 

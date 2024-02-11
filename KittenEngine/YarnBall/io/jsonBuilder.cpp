@@ -23,8 +23,8 @@ namespace YarnBall {
 
 		if (!root["curveRadius"].isNull()) {
 			float r = root["curveRadius"].asFloat();
-			sim->meta.radius = 0.2f * r;
-			sim->meta.barrierThickness = 2 * 0.8f * r;
+			sim->meta.radius = 0.1f * r;
+			sim->meta.barrierThickness = 2 * 0.9f * r;
 		}
 
 		auto simRoot = root["simulation"];
