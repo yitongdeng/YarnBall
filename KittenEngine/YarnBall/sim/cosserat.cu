@@ -44,7 +44,7 @@ namespace YarnBall {
 		// Linear change
 		vec3 dx = dxs[tid];
 		if (v0.invMass != 0) {
-			const float fricE = 1e-2f * h;	// Friction epsilon dx theshold for static vs kinetic friction
+			const float fricE = 1e-3f * h;	// Friction epsilon dx theshold for static vs kinetic friction
 
 			// Hessian H
 			mat3 H = mat3(1 / (v0.invMass * h * h));
