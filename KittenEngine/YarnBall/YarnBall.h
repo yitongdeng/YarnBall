@@ -137,6 +137,7 @@ namespace YarnBall {
 		void detectCollisions();
 		void iterateCosserat();
 		void iterateSpring();
+		void checkErrors();
 	};
 
 	Sim* readFromBCC(std::string path, float targetSegLen);

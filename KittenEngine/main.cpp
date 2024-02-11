@@ -84,6 +84,7 @@ void initScene() {
 	if (true) {
 		sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
 		printf("Total verts: %d\n", sim->meta.numVerts);
+		sim->printErrors = false;
 	}
 	else if (true) {
 		constexpr int numVerts = 64;
@@ -110,9 +111,9 @@ void initScene() {
 		// sim->meta.collisionPeriod = -1;
 
 		// sim->maxH = 1 / 30.f;
-		printf("%f\n", sim->meta.radius + 0.5f * sim->meta.barrierThickness);
-		printf("%f\n", 0.5f * sim->meta.barrierThickness);
-		printf("%f\n", sim->meta.radius);
+		// printf("%f\n", sim->meta.radius + 0.5f * sim->meta.barrierThickness);
+		// printf("%f\n", 0.5f * sim->meta.barrierThickness);
+		// printf("%f\n", sim->meta.radius);
 	}
 	camera.pos = sim->verts[0].pos;
 	camera.minDistance = 0.01f;

@@ -13,12 +13,13 @@
 		"damping": 1e-6,
 
 		// Env
-		"gravity": [0, -9.8, 0],
+		"gravity": [0, 0, 0],
 		"drag": 0.2,
 
 		// Solver
 		"maxTimeStep": 1e-3,
 		"numIterations": 16,
-		"collisionPeriod": 16
+		"collisionPeriod": 16,
+		"detectionScaler": 2
 	},
 }

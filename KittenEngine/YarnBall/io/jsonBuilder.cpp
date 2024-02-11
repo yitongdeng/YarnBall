@@ -59,6 +59,8 @@ namespace YarnBall {
 				sim->meta.numItr = simRoot["numIterations"].asInt();
 			if (!simRoot["collisionPeriod"].isNull())
 				sim->meta.collisionPeriod = simRoot["collisionPeriod"].asInt();
+			if (!simRoot["detectionScaler"].isNull())
+				sim->meta.detectionScaler = simRoot["detectionScaler"].asInt();
 		}
 
 		sim->configure(density);

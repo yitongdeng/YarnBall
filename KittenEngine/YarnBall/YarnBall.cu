@@ -115,10 +115,15 @@ namespace YarnBall {
 
 		// Init meta
 		cudaMalloc(&d_meta, sizeof(MetaData));
+
 		cudaMalloc(&d_error, 2 * sizeof(int));
+		cudaMemset(d_error, 0, 2 * sizeof(int));
+
 		cudaMalloc(&meta.d_dx, sizeof(vec3) * numVerts);
+
 		cudaMalloc(&meta.d_lastVels, sizeof(vec3) * numVerts);
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
+
 		cudaMalloc(&meta.d_hashTable, sizeof(int) * meta.hashTableSize);
 		cudaMalloc(&meta.d_numCols, sizeof(uint16_t) * numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
@@ -178,5 +183,33 @@ namespace YarnBall {
 	void Sim::zeroVelocities() {
 		zeroVels << <(meta.numVerts + 1023) / 1024, 1024 >> > (meta.d_verts, meta.d_lastVels, meta.numVerts);
 		checkCudaErrors(cudaGetLastError());
+	}
+
+	void Sim::checkErrors() {
+		int error[2];
+		cudaMemcpy(error, d_error, 2 * sizeof(int), cudaMemcpyDeviceToHost);
+		if (error[0] == ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED) {
+			if (printErrors) fprintf(stderr, "ERROR: MAX_COLLISIONS_PER_SEGMENT exceeded. Current simulation state may be corrupted!\n");
+			throw std::runtime_error("MAX_COLLISIONS_PER_SEGMENT exceeded");
+		}
+		else if (error[0] != ERROR_NONE) {
+			if (printErrors) fprintf(stderr, "ERROR: Undescript error %d\n", error[0]);
+			throw std::runtime_error("Indescript error");
+		}
+
+		if (printErrors)
+			if (error[1] == WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER)
+				fprintf(stderr, "WARNING: Excessive segment stretching detected. Missed collisions possible due to insufficient detection radius.\n");
+			else if (error[1] == WARNING_SEGMENT_INTERPENETRATION)
+				fprintf(stderr, "WARNING: Some collisions have been temporarily disabled due to interpenetration.\n");
+			else if (error[1] != ERROR_NONE)
+				fprintf(stderr, "WARNING: Indescript warning %d\n", error[1]);
+
+		if (error[0] != ERROR_NONE) lastErrorCode = error[0];
+		if (error[1] != ERROR_NONE) lastWarningCode = error[1];
+
+		// Reset errors
+		if (error[0] != 0 || error[1] != 0)
+			cudaMemset(d_error, 0, 2 * sizeof(int));
 	}
 }
