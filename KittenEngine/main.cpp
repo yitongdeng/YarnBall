@@ -83,6 +83,17 @@ void initScene() {
 	camera.angle = vec2(30, 30);
 	if (true) {
 		sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
+
+		// Just pin the top cm of the thing
+		float maxY = -INFINITY;
+		for (size_t i = 0; i < sim->meta.numVerts; i++)
+			maxY = glm::max(maxY, sim->verts[i].pos.y);
+		maxY -= 0.01f;
+		for (size_t i = 0; i < sim->meta.numVerts; i++)
+			if (sim->verts[i].pos.y > maxY)
+				sim->verts[i].invMass = 0;
+		sim->upload();
+
 		printf("Total verts: %d\n", sim->meta.numVerts);
 		sim->printErrors = false;
 	}
