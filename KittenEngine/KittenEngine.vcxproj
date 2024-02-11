@@ -191,6 +191,8 @@
     <ClCompile Include="KittenEngine\src\Texture.cpp" />
     <ClCompile Include="KittenEngine\src\Timer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="YarnBall\io\bccReader.cpp" />
+    <ClCompile Include="YarnBall\io\jsonBuilder.cpp" />
     <ClCompile Include="YarnBall\io\render.cpp" />
     <CudaCompile Include="YarnBall\sim\iteration.cu">
       <FileType>CppCode</FileType>

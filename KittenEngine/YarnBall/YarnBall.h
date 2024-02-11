@@ -111,14 +111,9 @@ namespace YarnBall {
 		~Sim();
 
 		// Initializes memory and sets up rest length, angles, and mass
-		void configure(float density = 1);
-
-		void setKBend(float k = 0.5f);
-		void setKStretch(float k = 1e2f);
-
-		// IO
-		// void readBCC(std::string path);
-		// void writeBCC(std::string path);
+		void configure(float density = 1e-3);
+		void setKBend(float k = 3e-9);
+		void setKStretch(float k = 1e-2);
 
 		// Rendering
 		void render();
@@ -144,5 +139,6 @@ namespace YarnBall {
 		void iterateSpring();
 	};
 
-	// Sim* buildFromJSON(std::string path);
+	Sim* readFromBCC(std::string path, float targetSegLen);
+	Sim* buildFromJSON(std::string path);
 }

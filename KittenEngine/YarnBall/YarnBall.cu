@@ -12,17 +12,17 @@ namespace YarnBall {
 		meta.gravity = vec3(0, -9.8, 0);
 		meta.h = maxH;
 		meta.drag = 0.2;
-		meta.damping = 1e-5;
+		meta.damping = 1e-6;
 
-		meta.radius = 0.001;
-		meta.barrierThickness = 0.003;
+		meta.radius = 1e-4;
+		meta.barrierThickness = 8e-4;
 
-		meta.kCollision = 1e-2;
+		meta.kCollision = 1e-5;
 		meta.detectionScaler = 2.f;
 		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
 		meta.collisionPeriod = 4;
-		meta.numItr = 4;
+		meta.numItr = 16;
 		meta.hashTableSize = max(1024, numVerts * COLLISION_HASH_RATIO) + 17;
 
 		// Initialize vertices

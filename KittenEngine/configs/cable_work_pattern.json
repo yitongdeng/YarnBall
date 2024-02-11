@@ -1,0 +1,24 @@
+{
+	"curveFile": "configs/models/cable_work_pattern.bcc",
+	"resampleLength": 1e-3,
+	"curveRadius": 5e-4,
+
+	"simulation": {
+		// Material
+		"density": 1e-3,
+		"frictionCoeff": 0.1,
+		"kStretch": 1e-2,
+		"kBend": 3e-9,
+		"kCollision": 1e-5,
+		"damping": 1e-6,
+
+		// Env
+		"gravity": [0, -9.8, 0],
+		"drag": 0.2,
+
+		// Solver
+		"maxTimeStep": 1e-3,
+		"numIterations": 4,
+		"collisionPeriod": 1
+	},
+}

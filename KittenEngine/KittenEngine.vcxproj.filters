@@ -84,6 +84,12 @@
     <ClCompile Include="YarnBall\io\render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="YarnBall\io\bccReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="YarnBall\io\jsonBuilder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="KittenEngine\includes\modules\Bound.h">
