@@ -26,9 +26,6 @@ namespace YarnBall {
 		const auto verts = data->d_verts;
 		const auto dxs = data->d_dx;
 
-		__shared__ vec3 forces[256];
-		__shared__ mat3 hessians[256];
-
 		// Linear change
 		Vertex v0 = verts[tid];
 
@@ -130,6 +127,8 @@ namespace YarnBall {
 			}
 		}
 
+		__shared__ vec3 forces[256];
+		__shared__ mat3 hessians[256];
 		forces[threadIdx.x] = f2;
 		hessians[threadIdx.x] = H2;
 
