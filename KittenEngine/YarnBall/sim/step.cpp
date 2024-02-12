@@ -2,25 +2,14 @@
 #include "../YarnBall.h"
 
 namespace YarnBall {
-	void Sim::step(float h) {
-		// Set some time step specific parameters
-		meta.lastH = meta.h;
-		meta.h = h;
-		meta.time += h;
+	void Sim::rebuildCUDAGraph() {
+		// Graph is still good
+		if (meta.collisionPeriod == lastColPeriod && meta.numItr == lastItr)
+			return;
+		checkCudaErrors(cudaGetLastError());
 
-		meta.detectionRadius = meta.radius + 0.5f * meta.barrierThickness;
-		meta.colGridSize = 0.5f * meta.detectionScaler * length(vec2(meta.maxSegLen + 2 * meta.detectionRadius, 2 * meta.detectionRadius));
-		meta.detectionRadius *= meta.detectionScaler;
-
-		if (meta.maxSegLen < 2 * (meta.radius + meta.barrierThickness))
-			throw std::runtime_error("Use thinner yarn or use longer segments. (maxSegLen must be at least 2 * (radius + barrierThickness)");
-
-		// Upload parameters
-		uploadMeta();
-
-		// Force reset collisions if we explicitly disabled them
-		if (meta.collisionPeriod <= 0)
-			cudaMemset(meta.d_numCols, 0, sizeof(int) * meta.numVerts);
+		// Build graph
+		cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
 		// Solver iterations
 		startIterate();
@@ -32,25 +21,43 @@ namespace YarnBall {
 		}
 
 		endIterate();
-		checkErrors();
+
+		cudaGraph_t graph;
+		cudaStreamEndCapture(stream, &graph);
+
+		// Create graph data
+		if (stepGraph) cudaGraphExecDestroy(stepGraph);
+		cudaGraphInstantiate(&stepGraph, graph, NULL, NULL, 0);
+		cudaGraphDestroy(graph);
+
+		// Force reset collisions if we explicitly disabled them
+		if (meta.collisionPeriod <= 0)
+			cudaMemsetAsync(meta.d_numCols, 0, sizeof(int) * meta.numVerts, stream);
+
+		checkCudaErrors(cudaGetLastError());
+
+		lastColPeriod = meta.collisionPeriod;
+		lastItr = meta.numItr;
 	}
 
 	float Sim::advance(float h) {
 		if (h <= 0) return 0;
-		float hLeft = h;
-		int stepsLeft;
 
-		while (true) {
-			stepsLeft = (int)ceil(hLeft / maxH);
-			float stepSize = hLeft / stepsLeft;
+		int steps = max(1, (int)ceil(h / maxH));
+		meta.lastH = meta.h;
+		meta.h = h / steps;
 
-			step(stepSize);
-			hLeft -= stepSize;
-			stepsLeft--;
-			if (stepsLeft <= 0)
-				break;
-		}
+		rebuildCUDAGraph();
+		uploadMeta();
 
-		return h - hLeft;
+		for (int s = 0; s < steps; s++)
+			cudaGraphLaunch(stepGraph, stream);
+
+		meta.time += h;
+		checkErrors();
+	}
+
+	void Sim::step(float h) {
+		advance(maxH);
 	}
 }

@@ -102,9 +102,15 @@ namespace YarnBall {
 		int* d_error = nullptr;
 		bool initialized = false;
 
+		int lastItr = -1;
+		int lastColPeriod = -1;
+
 		// GL stuff
 		Kitten::Mesh* cylMesh = nullptr;
 		Kitten::CudaComputeBuffer* vertBuffer = nullptr;
+
+		cudaStream_t stream = nullptr;
+		cudaGraphExec_t stepGraph = nullptr;
 
 	public:
 		Sim(int numVerts);
@@ -138,6 +144,8 @@ namespace YarnBall {
 		void iterateCosserat();
 		void iterateSpring();
 		void checkErrors();
+
+		void rebuildCUDAGraph();
 	};
 
 	Sim* readFromBCC(std::string path, float targetSegLen);

@@ -38,8 +38,7 @@ namespace YarnBall {
 	}
 
 	void Sim::startIterate() {
-		initItr << <(meta.numVerts + 1023) / 1024, 1024 >> > (d_meta);
-		checkCudaErrors(cudaGetLastError());
+		initItr << <(meta.numVerts + 1023) / 1024, 1024, 0, stream >> > (d_meta);
 	}
 
 	// Converts dx back to velocity and advects
@@ -59,7 +58,6 @@ namespace YarnBall {
 	}
 
 	void Sim::endIterate() {
-		endItr << <(meta.numVerts + 1023) / 1024, 1024 >> > (d_meta);
-		checkCudaErrors(cudaGetLastError());
+		endItr << <(meta.numVerts + 1023) / 1024, 1024, 0, stream >> > (d_meta);
 	}
 }

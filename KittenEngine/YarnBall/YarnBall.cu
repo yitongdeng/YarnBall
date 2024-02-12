@@ -40,6 +40,10 @@ namespace YarnBall {
 
 	Sim::~Sim() {
 		delete[] verts;
+		if (stream) {
+			cudaStreamSynchronize(stream);
+			cudaStreamDestroy(stream);
+		}
 
 		if (vertBuffer) delete vertBuffer;
 		if (d_meta) {
@@ -51,6 +55,7 @@ namespace YarnBall {
 			cudaFree(d_meta);
 		}
 		if (d_error) cudaFree(d_error);
+		if (stepGraph) cudaGraphExecDestroy(stepGraph);
 	}
 
 	void Sim::configure(float density) {
@@ -128,12 +133,15 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_numCols, sizeof(uint16_t) * numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
+
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
 		meta.d_verts = (Vertex*)vertBuffer->cudaPtr;
 
+		cudaDeviceSynchronize();
+		cudaStreamCreate(&stream);
 		uploadMeta();
 		upload();
-		cudaDeviceSynchronize();
+		checkCudaErrors(cudaGetLastError());
 	}
 
 	void Sim::setKStretch(float kStretch) {
@@ -161,15 +169,24 @@ namespace YarnBall {
 	}
 
 	void Sim::uploadMeta() {
-		cudaMemcpy(d_meta, &meta, sizeof(MetaData), cudaMemcpyHostToDevice);
+		meta.detectionRadius = meta.radius + 0.5f * meta.barrierThickness;
+		meta.colGridSize = 0.5f * meta.detectionScaler * length(vec2(meta.maxSegLen + 2 * meta.detectionRadius, 2 * meta.detectionRadius));
+		meta.detectionRadius *= meta.detectionScaler;
+
+		if (meta.maxSegLen < 2 * (meta.radius + meta.barrierThickness))
+			throw std::runtime_error("Use thinner yarn or use longer segments. (maxSegLen must be at least 2 * (radius + barrierThickness)");
+
+		cudaMemcpyAsync(d_meta, &meta, sizeof(MetaData), cudaMemcpyHostToDevice, stream);
 	}
 
 	void Sim::upload() {
-		cudaMemcpy(meta.d_verts, verts, sizeof(Vertex) * meta.numVerts, cudaMemcpyHostToDevice);
+		cudaMemcpyAsync(meta.d_verts, verts, sizeof(Vertex) * meta.numVerts, cudaMemcpyHostToDevice, stream);
+		cudaStreamSynchronize(stream);
 	}
 
 	void Sim::download() {
-		cudaMemcpy(verts, meta.d_verts, sizeof(Vertex) * meta.numVerts, cudaMemcpyDeviceToHost);
+		cudaMemcpyAsync(verts, meta.d_verts, sizeof(Vertex) * meta.numVerts, cudaMemcpyDeviceToHost, stream);
+		cudaStreamSynchronize(stream);
 	}
 
 	__global__ void zeroVels(Vertex* verts, vec3* lastVels, int numVerts) {
@@ -181,13 +198,17 @@ namespace YarnBall {
 	}
 
 	void Sim::zeroVelocities() {
-		zeroVels << <(meta.numVerts + 1023) / 1024, 1024 >> > (meta.d_verts, meta.d_lastVels, meta.numVerts);
+		zeroVels << <(meta.numVerts + 1023) / 1024, 1024, 0, stream >> > (meta.d_verts, meta.d_lastVels, meta.numVerts);
 		checkCudaErrors(cudaGetLastError());
 	}
 
 	void Sim::checkErrors() {
+		checkCudaErrors(cudaGetLastError());
+
 		int error[2];
-		cudaMemcpy(error, d_error, 2 * sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpyAsync(error, d_error, 2 * sizeof(int), cudaMemcpyDeviceToHost, stream);
+		cudaStreamSynchronize(stream);
+
 		if (error[0] == ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED) {
 			if (printErrors) fprintf(stderr, "ERROR: MAX_COLLISIONS_PER_SEGMENT exceeded. Current simulation state may be corrupted!\n");
 			//throw std::runtime_error("MAX_COLLISIONS_PER_SEGMENT exceeded");
@@ -210,6 +231,6 @@ namespace YarnBall {
 
 		// Reset errors
 		if (error[0] != 0 || error[1] != 0)
-			cudaMemset(d_error, 0, 2 * sizeof(int));
+			cudaMemsetAsync(d_error, 0, 2 * sizeof(int), stream);
 	}
 }

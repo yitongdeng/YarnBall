@@ -178,7 +178,6 @@ namespace YarnBall {
 	}
 
 	void Sim::iterateCosserat() {
-		cosseratItr << <(meta.numVerts + BLOCK_SIZE - 2) / (BLOCK_SIZE - 1), BLOCK_SIZE >> > (d_meta);
-		checkCudaErrors(cudaGetLastError());
+		cosseratItr << <(meta.numVerts + BLOCK_SIZE - 2) / (BLOCK_SIZE - 1), BLOCK_SIZE, 0, stream >> > (d_meta);
 	}
 }

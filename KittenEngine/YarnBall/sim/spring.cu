@@ -52,7 +52,7 @@ namespace YarnBall {
 
 	constexpr int BLOCK_SIZE = 256;
 	void Sim::iterateSpring() {
-		simpleSpringItr << <(meta.numVerts + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE >> > (d_meta);
+		simpleSpringItr << <(meta.numVerts + BLOCK_SIZE - 1) / BLOCK_SIZE, BLOCK_SIZE, 0, stream >> > (d_meta);
 		checkCudaErrors(cudaGetLastError());
 	}
 }
