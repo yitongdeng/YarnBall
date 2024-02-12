@@ -84,7 +84,13 @@ void initScene() {
 
 	camera.angle = vec2(30, 30);
 	if (true) {
-		sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
+		try {
+			sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
+		}
+		catch (const std::exception& e) {
+			printf("Error: %s\n", e.what());
+			exit(-1);
+		}
 
 		// Just pin the top cm of the thing
 		float maxY = -INFINITY;

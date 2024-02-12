@@ -72,6 +72,7 @@ namespace YarnBall {
 
 		int numVerts;			// Number of vertices
 		float maxSegLen;		// Largest segment length
+		float minSegLen;		// Largest segment length
 
 		float radius;			// Yarn radius. Note that this is the minimum radius. The actual radius is r + 0.5 * barrierThickness
 		float barrierThickness;	// Collision energy barrier thickness. This is the barrier between yarns.

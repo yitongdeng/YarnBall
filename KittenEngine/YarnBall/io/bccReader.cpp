@@ -111,6 +111,7 @@ namespace YarnBall {
 		Sim* sim = new Sim(numVerts);
 		numVerts = 0;
 		float maxLen = 0;
+		float minLen = FLT_MAX;
 		for (size_t i = 0; i < curves.size(); i++) {
 			auto& data = curves[i];
 			Vertex* verts = sim->verts + numVerts;
@@ -121,7 +122,9 @@ namespace YarnBall {
 			for (size_t j = 1; j < data.size(); j++) {
 				vec3 p = data[j];
 				verts[j].pos = p;
-				maxLen = glm::max(maxLen, glm::length(p - lastP));
+				float l = glm::length(p - lastP);
+				maxLen = glm::max(maxLen, l);
+				minLen = glm::min(minLen, l);
 				lastP = p;
 			}
 
@@ -137,8 +140,12 @@ namespace YarnBall {
 			numVerts += data.size();
 		}
 
-		if (maxLen > 1.5f * targetSegLen)
+		printf("Resampled with target length %f. (max %f, min %f)\n", targetSegLen, maxLen, minLen);
+
+		if (maxLen > 1.2f * targetSegLen)
 			printf("WARNING: Resampled max len is significantly larger than target length.");
+		if (1.2f * minLen < targetSegLen)
+			printf("WARNING: Resampled min len is significantly smaller than target length.");
 
 		return sim;
 	}
