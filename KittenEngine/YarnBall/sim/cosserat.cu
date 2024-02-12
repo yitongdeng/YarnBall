@@ -1,6 +1,7 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include "../YarnBall.h"
+#include "../hess3.h"
 
 namespace YarnBall {
 	__device__ inline vec4 inverseTorque(vec3 f, vec4 b) {
@@ -16,8 +17,9 @@ namespace YarnBall {
 		) * b);
 	}
 
+	constexpr int BLOCK_SIZE = 256;
 	__global__ void cosseratItr(MetaData* data) {
-		const int tid = (int)(blockIdx.x * 255 + threadIdx.x) - 1;
+		const int tid = (int)(blockIdx.x * (BLOCK_SIZE - 1) + threadIdx.x) - 1;
 		const int numVerts = data->numVerts;
 		if (tid >= numVerts || tid < 0) return;
 
@@ -30,7 +32,7 @@ namespace YarnBall {
 		Vertex v0 = verts[tid];
 
 		// Hessian H
-		mat3 H = mat3(1 / (v0.invMass * h * h));
+		hess3 H = hess3(1 / (v0.invMass * h * h));
 		// vel has been overwritten to contain y - pos
 		vec3 dx = dxs[tid];
 		vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - dx);
@@ -40,7 +42,7 @@ namespace YarnBall {
 			vec3 p0 = verts[v0.connectionIndex].pos;
 			vec3 p0dx = dxs[v0.connectionIndex];
 			f -= 4 * v0.kStretch * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
-			H += mat3(4 * (1 + damping) * v0.kStretch);
+			H.diag += 4 * (1 + damping) * v0.kStretch;
 		}
 
 		// We need to store absolute position and position updates seperatly for floating point precision
@@ -52,7 +54,7 @@ namespace YarnBall {
 		}
 
 		vec3 f2(0);
-		mat3 H2(0);
+		hess3 H2(0);
 
 		// Next segment energy
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
@@ -67,8 +69,8 @@ namespace YarnBall {
 				f += k * c - (damping * d) * dx;
 				f2 += -k * c - (damping * d) * p1dx;
 				d *= 1 + damping;
-				H[0][0] += d; H[1][1] += d; H[2][2] += d;
-				H2[0][0] += d; H2[1][1] += d; H2[2][2] += d;
+				H.diag += d;
+				H2.diag += d;
 			}
 
 			const float fricE = 1e-3f * h;	// Friction epsilon dx theshold for static vs kinetic friction
@@ -98,11 +100,12 @@ namespace YarnBall {
 				float dH = (-3 + (2 + invd) * invd - 2 * logd) * kCol * invb;
 				float ff = -(1 - d) * (d - 1 + 2 * d * logd) * invd * kCol;
 				f += (ff * (1 - col.uv.x) - damping * dH * Kit::pow2(1 - col.uv.x) * dot(col.normal, dx)) * col.normal;
-				mat3 op = glm::outerProduct(col.normal, col.normal);
-				H += ((1 + damping) * dH * Kit::pow2(1 - col.uv.x)) * op;
-
 				f2 += (ff * col.uv.x - damping * dH * Kit::pow2(col.uv.x) * dot(col.normal, p1dx)) * col.normal;
-				H2 += ((1 + damping) * dH * Kit::pow2(col.uv.x)) * op;
+
+				dH *= 1 + damping;
+				hess3 op = hess3::outer(col.normal);
+				H += op * (dH * Kit::pow2(1 - col.uv.x));
+				H2 += op * (dH * Kit::pow2(col.uv.x));
 
 				// Friction
 				vec3 u = ddpos - dot(col.normal, ddpos) * col.normal;
@@ -116,19 +119,19 @@ namespace YarnBall {
 
 					f1 *= fricMu * ff / ul;
 
-					op[0][0] -= 1; op[1][1] -= 1; op[2][2] -= 1;
+					op.diag -= 1;
 
 					f -= f1 * (1 - col.uv.x) * u;
-					H -= (Kit::pow2(1 - col.uv.x) * f1) * op;
+					H -= op * (Kit::pow2(1 - col.uv.x) * f1);
 
 					f2 -= f1 * col.uv.x * u;
-					H2 -= (Kit::pow2(col.uv.x) * f1) * op;
+					H2 -= op * (Kit::pow2(col.uv.x) * f1);
 				}
 			}
 		}
 
-		__shared__ vec3 forces[256];
-		__shared__ mat3 hessians[256];
+		__shared__ vec3 forces[BLOCK_SIZE];
+		__shared__ hess3 hessians[BLOCK_SIZE];
 		forces[threadIdx.x] = f2;
 		hessians[threadIdx.x] = H2;
 
@@ -144,7 +147,7 @@ namespace YarnBall {
 
 		if (v0.invMass != 0) {
 			// Local solve and update
-			dx += inverse(H) * f;
+			dx += inverse((mat3)H) * f;
 			dxs[tid] = dx;
 		}
 
@@ -175,7 +178,7 @@ namespace YarnBall {
 	}
 
 	void Sim::iterateCosserat() {
-		cosseratItr << <(meta.numVerts + 254) / 255, 256 >> > (d_meta);
+		cosseratItr << <(meta.numVerts + BLOCK_SIZE - 2) / (BLOCK_SIZE - 1), BLOCK_SIZE >> > (d_meta);
 		checkCudaErrors(cudaGetLastError());
 	}
 }
