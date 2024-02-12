@@ -14,7 +14,7 @@ Kit::BasicCameraControl camera;
 YarnBall::Sim* sim = nullptr;
 
 bool simulate = false;
-float timeScale = 1;
+float timeScale = 1.;
 float measuredSimSpeed = 1;
 
 void renderScene() {

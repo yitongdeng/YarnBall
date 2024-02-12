@@ -133,7 +133,6 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_numCols, sizeof(uint16_t) * numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
-
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
 		meta.d_verts = (Vertex*)vertBuffer->cudaPtr;
 

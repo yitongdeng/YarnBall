@@ -32,9 +32,9 @@ namespace YarnBall {
 		cudaGraphDestroy(graph);
 
 		// Force reset collisions if we explicitly disabled them
-		if (meta.collisionPeriod <= 0)
-			cudaMemsetAsync(meta.d_numCols, 0, sizeof(int) * meta.numVerts, stream);
-
+		if (meta.collisionPeriod <= 0) 
+			cudaMemset(meta.d_numCols, 0, sizeof(uint16_t) * meta.numVerts);
+		
 		checkCudaErrors(cudaGetLastError());
 
 		lastColPeriod = meta.collisionPeriod;

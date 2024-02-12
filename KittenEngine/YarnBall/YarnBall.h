@@ -11,7 +11,7 @@ namespace YarnBall {
 	using namespace glm;
 
 	// This should really NEVER be exceeded.
-	constexpr int MAX_COLLISIONS_PER_SEGMENT = 16;
+	constexpr int MAX_COLLISIONS_PER_SEGMENT = 64;
 	constexpr int COLLISION_HASH_RATIO = 10;
 
 	enum class VertexFlags {
