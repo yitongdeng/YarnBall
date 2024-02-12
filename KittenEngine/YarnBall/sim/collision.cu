@@ -14,13 +14,15 @@ namespace YarnBall {
 		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
 
 		// Get node pos and hash
-		const vec3 p0 = verts[tid].pos + dxs[tid];
-		const vec3 p1 = verts[tid + 1].pos + dxs[tid + 1];
-		if (length2(p1 - p0) > errorRadius2)
+		vec3 p0 = verts[tid].pos;
+		vec3 p1 = verts[tid + 1].pos;
+		vec3 dx0 = dxs[tid];
+		vec3 dx1 = dxs[tid + 1];
+
+		if (length2((p1 - p0) + (dx1 - dx0)) > errorRadius2)
 			errorReturn[1] = Sim::WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER;
 
-		const vec3 pos = 0.5f * (p0 + p1);
-		const ivec3 cell = Kitten::getCell(pos, data->colGridSize);
+		const ivec3 cell = Kitten::getCell(0.5f * ((p0 + p1) + (dx0 + dx1)), data->colGridSize);
 		const int hash = Kitten::getCellHash(cell);
 
 		// Insert
@@ -44,11 +46,16 @@ namespace YarnBall {
 		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
 
 		// Get node pos and hash
-		const vec3 p0 = verts[tid].pos + dxs[tid];
-		const vec3 p1 = verts[tid + 1].pos + dxs[tid + 1];
+		vec3 p0 = verts[tid].pos;
+		vec3 dx0 = dxs[tid];
+		vec3 p1 = verts[tid + 1].pos;
+		vec3 dx1 = dxs[tid + 1];
+
+		const ivec3 cell = Kitten::getCell(0.5f * ((p0 + p1) + (dx0 + dx1)), data->colGridSize);
+		dx1 -= dx0;
+		p1 = (p1 - p0) + dx1;
+
 		const ivec2 cid(verts[tid].connectionIndex, verts[tid + 1].connectionIndex);
-		const vec3 pos = 0.5f * (p0 + p1);
-		const ivec3 cell = Kitten::getCell(pos, data->colGridSize);
 		const int tSize = data->hashTableSize;
 		const int* table = data->d_hashTable;
 
@@ -59,7 +66,6 @@ namespace YarnBall {
 		float mr2 = 2 * data->radius;
 		mr2 *= mr2;
 
-		Collision col;
 		int numCols = 0;
 		const auto collisions = data->d_collisions;
 		// Visit every cell in the 3x3x3 neighborhood
@@ -71,6 +77,7 @@ namespace YarnBall {
 					const int hash = Kitten::getCellHash(ncell);
 					int entry = (hash % tSize + tSize) % tSize;
 					while (true) {
+						Collision col;
 						col.oid = table[entry];
 						if (col.oid == 0) break;
 
@@ -78,17 +85,17 @@ namespace YarnBall {
 						if (col.oid != tid && col.oid != tid + 1 && col.oid != tid - 1)			// Exempt neighboring segments
 							if ((cid.x < 0 || (cid.x != col.oid && cid.x != col.oid + 1)) &&
 								(cid.y < 0 || (cid.y != col.oid && cid.y != col.oid + 1))) {	// Exempt segments with special vertex connections
-								vec3 op0 = verts[col.oid].pos + dxs[col.oid];
-								vec3 op1 = verts[col.oid + 1].pos + dxs[col.oid + 1];
+								vec3 op0 = (verts[col.oid].pos - p0) + (dxs[col.oid] - dx0);
+								vec3 op1 = (verts[col.oid + 1].pos - p0) + (dxs[col.oid + 1] - dx0);
 
-								col.uv = Kit::lineClosestPoints(p0, p1, op0, op1);
+								col.uv = Kit::lineClosestPoints(vec3(0), p1, op0, op1);
 								if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
 									col.uv = vec2(0.5);
 								// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
 								if ((hasLower || col.uv.x > 0) && (!(bool)(verts[col.oid].flags & (uint32_t)VertexFlags::hasPrev) || col.uv.y > 0)) {
 
 									col.uv = clamp(col.uv, vec2(0), vec2(1));
-									col.normal = mix(p0, p1, col.uv.x) - mix(op0, op1, col.uv.y);
+									col.normal = col.uv.x * p1 - mix(op0, op1, col.uv.y);
 									float d2 = Kit::length2(col.normal);
 
 									if (d2 < r2) {
