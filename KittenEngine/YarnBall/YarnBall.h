@@ -123,7 +123,7 @@ namespace YarnBall {
 
 		// Rendering
 		void render();
-		// void renderShadow();
+		void renderShadows();
 
 		// Utils
 		// void glueEndpoints(float searchRadius);

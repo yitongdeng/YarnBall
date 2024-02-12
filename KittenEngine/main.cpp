@@ -30,7 +30,7 @@ void renderScene() {
 		measuredSimSpeed = mix(measuredSimSpeed, advTime / measuredTime, 0.05f);
 	}
 
-	Kit::lights[0].dir = -normalize(Kit::lights[0].pos);
+	Kit::lights[0].pos = camera.pos;
 	Kit::projMat = glm::perspective(45.0f, Kit::getAspect(), 0.005f, 512.f);
 	Kit::viewMat = camera.getViewMatrix();
 
@@ -39,6 +39,7 @@ void renderScene() {
 	glClearColor(0.08f, 0.08f, 0.08f, 1.f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	sim->renderShadows();
 	sim->render();
 }
 
@@ -59,7 +60,7 @@ void renderGui() {
 	}
 
 	if (ImGui::TreeNode("Rendering")) {
-		ImGui::DragFloat3("Light Position", (float*)&Kit::lights[0].pos, 0.01f);
+		ImGui::Checkbox("Render shadows", (bool*)&Kit::lights[0].hasShadow);
 
 		ImGui::TreePop();
 	}
@@ -71,12 +72,13 @@ void initScene() {
 	Kit::loadDirectory("resources");
 
 	Kit::UBOLight light;
-	light.col = vec4(1, 1, 1, 4);
-	light.dir = vec3(sin(radians(30.f)), -cos(radians(30.f)), 0);
-	light.pos = -2.f * light.dir;
-	light.hasShadow = false;
+	light.col = vec4(1, 1, 1, 1);
+	light.dir = normalize(vec3(1, -2, -1));
+	light.hasShadow = true;
 	light.type = (int)Kit::KittenLight::DIR;
 	Kit::lights.push_back(light);
+	light.shadowBias = 0.0001f;
+	Kit::shadowDist = 0.5f;
 
 	Kit::ambientLight.col = vec4(0);
 

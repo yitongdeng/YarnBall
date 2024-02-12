@@ -33,7 +33,8 @@ void main() {
 	gl_Position = vpMat * vec4(wPos, 1);
 
 	float k = l / n0.lRest - 1;
-	col = mix(hue2rgb(0.66666 - clamp(20 * k, -0.33333, 0.33333)), vec3(1, 1, 1), exp(-1000 * k * k));
+	col = vec3(1, 1, 1);
+	col.xy *= 1 - 0.2 * (gl_InstanceID % 4);
 
 	norm = (modelMat * vec4(basis * (vec3(1, 0, 1) * vPos), 0)).xyz;
 

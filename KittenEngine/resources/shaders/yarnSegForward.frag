@@ -22,5 +22,5 @@ void main() {
 	mCol.xz *= -1 < mPos.y && mPos.y < 1 ? 0.5 : 1;
 	mCol.xy *= -1 < mPos.z && mPos.z < 1 ? 0.5 : 1;
 
-	fragColor = vec4(mix(getLightCol(wPos) * d, mCol.xyz * col, 0.9), 0);
+	fragColor = vec4(getLightCol(wPos) * max(d, 0.1) * mCol.xyz * col, 0);
 }
