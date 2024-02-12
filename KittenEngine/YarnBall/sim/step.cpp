@@ -9,6 +9,7 @@ namespace YarnBall {
 		checkCudaErrors(cudaGetLastError());
 
 		// Build graph
+		cudaStreamSynchronize(stream);
 		cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
 		// Solver iterations
