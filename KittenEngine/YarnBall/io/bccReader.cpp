@@ -110,13 +110,20 @@ namespace YarnBall {
 		// Convert to simulation format
 		Sim* sim = new Sim(numVerts);
 		numVerts = 0;
+		float maxLen = 0;
 		for (size_t i = 0; i < curves.size(); i++) {
 			auto& data = curves[i];
 			Vertex* verts = sim->verts + numVerts;
 
 			// Add the vertices
-			for (size_t j = 0; j < data.size(); j++)
-				verts[j].pos = data[j];
+			vec3 lastP = data[0];
+			verts[0].pos = lastP;
+			for (size_t j = 1; j < data.size(); j++) {
+				vec3 p = data[j];
+				verts[j].pos = p;
+				maxLen = glm::max(maxLen, glm::length(p - lastP));
+				lastP = p;
+			}
 
 			// Cut off the end
 			verts[data.size() - 1].flags = 0;
@@ -129,6 +136,9 @@ namespace YarnBall {
 
 			numVerts += data.size();
 		}
+
+		if (maxLen > 1.5f * targetSegLen)
+			printf("WARNING: Resampled max len is significantly larger than target length.");
 
 		return sim;
 	}

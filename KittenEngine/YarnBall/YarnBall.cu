@@ -169,7 +169,7 @@ namespace YarnBall {
 
 	void Sim::uploadMeta() {
 		meta.detectionRadius = meta.radius + 0.5f * meta.barrierThickness;
-		meta.colGridSize = 0.5f * meta.detectionScaler * length(vec2(meta.maxSegLen + 2 * meta.detectionRadius, 2 * meta.detectionRadius));
+		meta.colGridSize = 0.5f * meta.detectionScaler * (meta.maxSegLen + 2 * meta.detectionRadius);
 		meta.detectionRadius *= meta.detectionScaler;
 
 		if (meta.maxSegLen < 2 * (meta.radius + meta.barrierThickness))

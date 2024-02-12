@@ -18,8 +18,8 @@
 
 		// Solver
 		"maxTimeStep": 3e-4,
-		"numIterations": 16,
-		"collisionPeriod": 16,
+		"numIterations": 8,
+		"collisionPeriod": 8,
 		"detectionScaler": 1.5
 	},
 }
