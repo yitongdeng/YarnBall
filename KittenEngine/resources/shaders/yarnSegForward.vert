@@ -36,7 +36,7 @@ void main() {
 	col = vec3(1, 1, 1);
 	col.xy *= 1 - 0.2 * (gl_InstanceID % 4);
 
-	if (n0.flags >= 8) col = vec3(1, 0, 0);
+	// if (n0.flags >= 8) col = vec3(1, 0, 0);
 
 	norm = (modelMat * vec4(basis * (vec3(1, 0, 1) * vPos), 0)).xyz;
 

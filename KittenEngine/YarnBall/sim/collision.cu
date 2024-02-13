@@ -52,8 +52,7 @@ namespace YarnBall {
 		vec3 dx1 = dxs[tid + 1];
 
 		const ivec3 cell = Kitten::getCell(0.5f * ((p0 + p1) + (dx0 + dx1)), data->colGridSize);
-		dx1 -= dx0;
-		p1 = (p1 - p0) + dx1;
+		p1 = (p1 - p0) + (dx1 - dx0);
 
 		const ivec2 cid(verts[tid].connectionIndex, verts[tid + 1].connectionIndex);
 		const int tSize = data->hashTableSize;
@@ -92,29 +91,28 @@ namespace YarnBall {
 								if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
 									col.uv = vec2(0.5);
 								// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
-								if ((hasLower || col.uv.x > 0) && (!(bool)(verts[col.oid].flags & (uint32_t)VertexFlags::hasPrev) || col.uv.y > 0)) {
+								// if ((hasLower || col.uv.x > 0) && (!(bool)(verts[col.oid].flags & (uint32_t)VertexFlags::hasPrev) || col.uv.y > 0)) {
+								col.uv = clamp(col.uv, vec2(0), vec2(1));
+								col.normal = col.uv.x * p1 - mix(op0, op1, col.uv.y);
+								float d2 = Kit::length2(col.normal);
 
-									col.uv = clamp(col.uv, vec2(0), vec2(1));
-									col.normal = col.uv.x * p1 - mix(op0, op1, col.uv.y);
-									float d2 = Kit::length2(col.normal);
-
-									if (d2 < r2) {
-										if (d2 < mr2) // Report interpenetration
-											errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
-										if (numCols == MAX_COLLISIONS_PER_SEGMENT) {
-											errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
-											return;
-										}
-
-										col.normal *= inversesqrt(d2);
-
-										// Add entry to collision list
-										// This is getting executed by the opposing segment in the same way. 
-										// So theoretically, this thread only needs to add itself (pray to the floating point gods)
-										collisions[tid + numVerts * numCols] = col;
-										numCols++;
+								if (d2 < r2) {
+									if (d2 < mr2) // Report interpenetration
+										errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
+									if (numCols == MAX_COLLISIONS_PER_SEGMENT) {
+										errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
+										return;
 									}
+
+									col.normal *= inversesqrt(d2);
+
+									// Add entry to collision list
+									// This is getting executed by the opposing segment in the same way. 
+									// So theoretically, this thread only needs to add itself (pray to the floating point gods)
+									collisions[tid + numVerts * numCols] = col;
+									numCols++;
 								}
+								// }
 							}
 
 						// Check next entry
@@ -123,11 +121,11 @@ namespace YarnBall {
 				}
 
 		data->d_numCols[tid] = numCols;
-
+		/*
 		int flag = verts[tid].flags;
 		if (numCols > 0) flag |= (uint32_t)VertexFlags::colliding;
 		else flag &= ~(uint32_t)VertexFlags::colliding;
-		verts[tid].flags = flag;
+		verts[tid].flags = flag;*/
 	}
 
 	void Sim::detectCollisions() {

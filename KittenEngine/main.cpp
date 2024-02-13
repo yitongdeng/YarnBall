@@ -83,7 +83,7 @@ void initScene() {
 	Kit::ambientLight.col = vec4(0);
 
 	camera.angle = vec2(30, 30);
-	if (false) {
+	if (true) {
 		try {
 			sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
 		}
@@ -120,10 +120,12 @@ void initScene() {
 		sim->verts[0].invMass = sim->verts[32].invMass = sim->verts[63].invMass = 0;
 		sim->verts[31].flags = 0;
 		sim->meta.detectionScaler = 1;
+		sim->meta.collisionPeriod = 1;
+		sim->meta.kCollision = 1e-7;
 		sim->configure();
 		sim->setKBend(1e-7);
 		sim->setKStretch(1e-2);
-		sim->maxH = 3e-4;
+		sim->maxH = 1e-3;
 		sim->upload();
 		sim->meta.gravity = vec3(-3, -3, 0);
 	}
