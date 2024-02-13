@@ -18,6 +18,7 @@ namespace YarnBall {
 		hasPrev = 1,		// Whether the vertex has a previous vertex
 		hasNext = 2,		// Whether the vertex has a next vertex
 		fixOrientation = 4,	// Fix the orientation of the segment
+		colliding = 8,		// Whether this is colliding (unused)
 	};
 
 	// Simulation vertex (aligned to openGL layout)

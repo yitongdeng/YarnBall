@@ -97,6 +97,9 @@ namespace YarnBall {
 				v.q = Kit::Rotor::fromTo(vec3(1, 0, 0), normalize(seg0));
 
 				mass += v.lRest;
+
+				meta.maxSegLen = max(meta.maxSegLen, v.lRest);
+				meta.minSegLen = min(meta.minSegLen, v.lRest);
 			}
 
 			mass *= 0.5f * density;
@@ -105,9 +108,6 @@ namespace YarnBall {
 				v.invMass *= 1 / mass;
 			else
 				v.invMass = 0;
-
-			meta.maxSegLen = max(meta.maxSegLen, v.lRest);
-			meta.minSegLen = min(meta.minSegLen, v.lRest);
 		}
 
 		// Init rest orientation
@@ -174,8 +174,8 @@ namespace YarnBall {
 		meta.colGridSize = 0.5f * meta.detectionScaler * (meta.maxSegLen + 2 * meta.detectionRadius);
 		meta.detectionRadius *= meta.detectionScaler;
 
-		if (meta.minSegLen < 2 * (meta.radius + meta.barrierThickness))
-			throw std::runtime_error("Use thinner yarn or use longer segments. (Min seg length must be at least 2 * (radius + barrierThickness)");
+		if (meta.minSegLen < 2 * meta.radius + meta.barrierThickness)
+			throw std::runtime_error("Use thinner yarn or use longer segments. (Min seg length must be at least 2 * radius + barrierThickness");
 
 		cudaMemcpyAsync(d_meta, &meta, sizeof(MetaData), cudaMemcpyHostToDevice, stream);
 	}

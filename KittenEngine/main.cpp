@@ -83,7 +83,7 @@ void initScene() {
 	Kit::ambientLight.col = vec4(0);
 
 	camera.angle = vec2(30, 30);
-	if (true) {
+	if (false) {
 		try {
 			sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
 		}
@@ -110,6 +110,28 @@ void initScene() {
 		sim = new YarnBall::Sim(numVerts);
 		const float segLen = 0.002f;
 
+		for (int i = 0; i < 32; i++) {
+			vec3 pos = vec3(0.00002f * i * (i - 16) + segLen * 1, -segLen * i, 0);
+			sim->verts[i].pos = pos;
+			pos.x *= -1;
+			sim->verts[i + 32].pos = pos;
+		}
+
+		sim->verts[0].invMass = sim->verts[32].invMass = sim->verts[63].invMass = 0;
+		sim->verts[31].flags = 0;
+		sim->meta.detectionScaler = 1;
+		sim->configure();
+		sim->setKBend(1e-7);
+		sim->setKStretch(1e-2);
+		sim->maxH = 3e-4;
+		sim->upload();
+		sim->meta.gravity = vec3(-3, -3, 0);
+	}
+	else if (true) {
+		constexpr int numVerts = 64;
+		sim = new YarnBall::Sim(numVerts);
+		const float segLen = 0.002f;
+
 		for (size_t i = 0; i < 32; i++)
 			sim->verts[i].pos = vec3(segLen * i, 0, 0);
 		//	sim->verts[i].pos = vec3(segLen * i, (i % 2) * segLen, 0);
@@ -120,19 +142,11 @@ void initScene() {
 		sim->verts[0].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
 		sim->verts[31].flags = 0;
 
-		// sim->verts[55].invMass = 0;
-
 		sim->configure();
 		sim->setKBend(3e-9);
 		sim->setKStretch(1e-2);
 		sim->upload();
 		sim->meta.gravity = vec3(-3, -0.2, 0);
-		// sim->meta.collisionPeriod = -1;
-
-		// sim->maxH = 1 / 30.f;
-		// printf("%f\n", sim->meta.radius + 0.5f * sim->meta.barrierThickness);
-		// printf("%f\n", 0.5f * sim->meta.barrierThickness);
-		// printf("%f\n", sim->meta.radius);
 	}
 	camera.pos = sim->verts[0].pos;
 	camera.minDistance = 0.01f;

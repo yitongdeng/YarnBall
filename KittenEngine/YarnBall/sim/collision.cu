@@ -123,6 +123,11 @@ namespace YarnBall {
 				}
 
 		data->d_numCols[tid] = numCols;
+
+		int flag = verts[tid].flags;
+		if (numCols > 0) flag |= (uint32_t)VertexFlags::colliding;
+		else flag &= ~(uint32_t)VertexFlags::colliding;
+		verts[tid].flags = flag;
 	}
 
 	void Sim::detectCollisions() {
