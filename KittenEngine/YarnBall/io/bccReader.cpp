@@ -16,45 +16,88 @@ namespace YarnBall {
 		char fileInfo[40];
 	};
 
+	dvec3 sampleCurve(vector<vec3>& cmr, double t) {
+		int si = glm::clamp((int)floor(t), 1, (int)cmr.size() - 3);
+		dvec3 p0 = cmr[si - 1];
+		dvec3 p1 = cmr[si];
+		dvec3 p2 = cmr[si + 1];
+		dvec3 p3 = cmr[si + 2];
+
+		return Kit::cmrSpline(p0, p1, p2, p3, t - si);
+	}
+
 	// Simple algorithm to resample a CMR spline
-	vector<vec3> resampleCMR(vector<vec3> cmr, float tarSegLen) {
-		vector<vec3> resampled;
+	vector<vec3> resampleCMR(vector<vec3>& cmr, float tarSegLen) {
+		vector<double> ts;
 
 		int i = 1;
-		float lenLeft = 0;
+		dvec3 lastPos = cmr[i];				// Last position added to the list
+		ts.push_back(1);
+
 		while (i < cmr.size() - 2) {
-			vec3 p0 = cmr[i - 1];
-			vec3 p1 = cmr[i];
-			vec3 p2 = cmr[i + 1];
-			vec3 p3 = cmr[i + 2];
+			dvec3 p0 = cmr[i - 1];
+			dvec3 p1 = cmr[i];
+			dvec3 p2 = cmr[i + 1];
+			dvec3 p3 = cmr[i + 2];
 
-			// Estimate the arc length of the curve segment
-			constexpr int numSamples = 3;
-			vec3 lastPos = p1;
-			float arcLen = 0;
-			for (size_t j = 0; j < numSamples; j++) {
-				vec3 pos = Kit::cmrSpline(p0, p1, p2, p3, (j + 1) / (float)(numSamples + 1));
-				arcLen += glm::length(pos - lastPos);
-				lastPos = pos;
+			// Repeated find a monotonically increasing t 
+			// s.t the distance from the last point is always exactly tarSegLen
+
+			constexpr int numSamples = 3;	// Min samples to take
+			dvec3 s0 = p1;		// Last position where the distance value was calculated
+			double t0 = 0;
+
+			for (int j = 0; j < numSamples; j++) {
+				const double t1 = (j + 1) / (double)numSamples;
+				const dvec3 s1 = Kit::cmrSpline(p0, p1, p2, p3, t1);
+				double l1 = length(s1 - lastPos);
+
+				// The next sample is outside the sphere
+				double l0 = length(s0 - lastPos);
+				while (l1 >= tarSegLen) {
+					double t = t1 + (t1 - t0) * (tarSegLen - l1) / (l1 - l0);
+
+					for (int k = 0; k < 16; k++) {
+						dvec3 x = Kit::cmrSpline(p0, p1, p2, p3, t);
+						double d = length(x - lastPos);
+						t += (t - t0) * (tarSegLen - d) / (d - l0);
+					}
+
+					ts.push_back(i + t);
+					lastPos = Kit::cmrSpline(p0, p1, p2, p3, t);
+					l1 = length(s1 - lastPos);
+
+					l0 = 0;
+					t0 = t;
+				}
+
+				t0 = t1;
+				s0 = s1;
 			}
-			arcLen += glm::length(p2 - lastPos);
 
-			float t = lenLeft / arcLen;
-			float step = tarSegLen / arcLen;
-
-			// Set t limit. This is so we leave enough room for the last point
-			float maxT = (i < cmr.size() - 3) ? 1 : 1 - step;
-			while (t < maxT) {
-				vec3 pos = Kit::cmrSpline(p0, p1, p2, p3, t);
-				resampled.push_back(pos);
-				t += step;
-			}
-			lenLeft = (t - 1) * arcLen;
 			i++;
 		}
 
-		// Add the last point on there
-		resampled.push_back(cmr[cmr.size() - 2]);
+		if (true) {
+			// Check how far the last point is from the end
+			// Add a new point if its easier to do so
+			double d = length(sampleCurve(cmr, ts.back()) - (dvec3)cmr[cmr.size() - 2]);
+			double dt = ts[ts.size() - 1] - ts[ts.size() - 2];
+			if (d > 0.5f * tarSegLen)
+				ts.push_back(cmr.size() - 2);
+			else
+				ts.back() = cmr.size() - 2;
+			dt -= ts[ts.size() - 1] - ts[ts.size() - 2];
+
+			// Now we need to go back and shift somt points to make the last point line up
+			const int N = std::min((int)ts.size(), 16);
+			for (int i = 0; i < N; i++)
+				ts[ts.size() - 2 - i] -= dt * (N - i) / (double)N;
+		}
+
+		vector<vec3> resampled(ts.size());
+		for (size_t i = 0; i < ts.size(); i++)
+			resampled[i] = (vec3)sampleCurve(cmr, ts[i]);
 		return resampled;
 	}
 
@@ -98,7 +141,6 @@ namespace YarnBall {
 
 			// Ignore curves with less than 3 points
 			if (numPoints < 3) continue;
-			if (isClosed) points.push_back(points[0]);
 
 			isCurveClosed.push_back(isClosed);
 			curves.push_back(points);
