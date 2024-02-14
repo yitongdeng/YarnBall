@@ -56,6 +56,8 @@ namespace YarnBall {
 		}
 		if (d_error) cudaFree(d_error);
 		if (stepGraph) cudaGraphExecDestroy(stepGraph);
+		if (cylMesh) delete cylMesh;
+		if (cylMeshHiRes) delete cylMeshHiRes;
 	}
 
 	void Sim::configure(float density) {
@@ -119,6 +121,7 @@ namespace YarnBall {
 
 		// Mesh for rendering
 		cylMesh = Kit::genCylMesh(6, 1, false);
+		cylMeshHiRes = Kit::genCylMesh(8, 6, false);
 
 		// Init meta
 		cudaMalloc(&d_meta, sizeof(MetaData));

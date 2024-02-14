@@ -99,6 +99,8 @@ namespace YarnBall {
 		int lastWarningCode = ERROR_NONE;
 		bool printErrors = true;
 
+		bool renderShaded = false;
+
 	private:
 		MetaData* d_meta = nullptr;
 		int* d_error = nullptr;
@@ -109,6 +111,7 @@ namespace YarnBall {
 
 		// GL stuff
 		Kitten::Mesh* cylMesh = nullptr;
+		Kitten::Mesh* cylMeshHiRes = nullptr;
 		Kitten::CudaComputeBuffer* vertBuffer = nullptr;
 
 		cudaStream_t stream = nullptr;

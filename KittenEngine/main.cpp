@@ -59,11 +59,22 @@ void renderGui() {
 		ImGui::TreePop();
 	}
 
+	static bool lightFollowCam = true;
+	static vec3 lightDir = normalize(vec3(1, -2, -1));
+
 	if (ImGui::TreeNode("Rendering")) {
+		ImGui::Checkbox("Render shaded", &sim->renderShaded);
 		ImGui::Checkbox("Render shadows", (bool*)&Kit::lights[0].hasShadow);
+
+		ImGui::Checkbox("Light follows camera", &lightFollowCam);
+		ImGui::DragFloat3("Light direction", (float*)&lightDir);
 
 		ImGui::TreePop();
 	}
+	if (lightFollowCam)
+		Kit::lights[0].dir = (mat3)glm::rotate(mat4(1), radians(camera.angle.x), vec3(0, 1, 0)) * lightDir;
+	else
+		Kit::lights[0].dir = lightDir;
 
 	ImGui::End();
 }
@@ -85,7 +96,8 @@ void initScene() {
 	camera.angle = vec2(30, 30);
 	if (true) {
 		try {
-			sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
+			sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
+			// sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
 		}
 		catch (const std::exception& e) {
 			printf("Error: %s\n", e.what());
@@ -104,6 +116,7 @@ void initScene() {
 
 		printf("Total verts: %d\n", sim->meta.numVerts);
 		sim->printErrors = false;
+		sim->renderShaded = true;
 	}
 	else if (true) {
 		constexpr int numVerts = 64;
