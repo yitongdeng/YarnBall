@@ -96,9 +96,10 @@ namespace YarnBall {
 								col.normal = col.uv.x * p1 - mix(op0, op1, col.uv.y);
 								float d2 = Kit::length2(col.normal);
 
-								if (d2 < r2) {
-									if (d2 < mr2) // Report interpenetration
-										errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
+								if (d2 < mr2) // Report interpenetration
+									errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
+								else if (d2 < r2) {
+
 									if (numCols == MAX_COLLISIONS_PER_SEGMENT) {
 										errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
 										return;
