@@ -16,6 +16,7 @@ namespace YarnBall {
 
 		meta.radius = 1e-4;
 		meta.barrierThickness = 8e-4;
+		meta.accelerationRatio = 1;
 
 		meta.kCollision = 1e-5;
 		meta.detectionScaler = 2.f;
@@ -23,7 +24,7 @@ namespace YarnBall {
 		meta.time = 0.f;
 		meta.collisionPeriod = 8;
 		meta.numItr = 8;
-		meta.hashTableSize = max(1024, numVerts * COLLISION_HASH_RATIO) + 17;
+		meta.hashTableSize = max(1024, 27 * numVerts * COLLISION_HASH_RATIO) + 17;
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
@@ -135,7 +136,7 @@ namespace YarnBall {
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
 
 		cudaMalloc(&meta.d_hashTable, sizeof(int) * meta.hashTableSize);
-		cudaMalloc(&meta.d_numCols, sizeof(uint16_t) * numVerts);
+		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);

@@ -148,7 +148,7 @@ namespace YarnBall {
 
 		if (v0.invMass != 0) {
 			// Local solve and update
-			dx += inverse((mat3)H) * f;
+			dx += data->accelerationRatio * (inverse((mat3)H) * f);
 			dxs[tid] = dx;
 		}
 

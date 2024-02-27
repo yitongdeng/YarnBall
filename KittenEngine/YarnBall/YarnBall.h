@@ -12,7 +12,7 @@ namespace YarnBall {
 
 	// This should really NEVER be exceeded.
 	constexpr int MAX_COLLISIONS_PER_SEGMENT = 64;
-	constexpr int COLLISION_HASH_RATIO = 10;
+	constexpr int COLLISION_HASH_RATIO = 11;
 
 	enum class VertexFlags {
 		hasPrev = 1,		// Whether the vertex has a previous vertex
@@ -52,7 +52,7 @@ namespace YarnBall {
 		vec3* d_lastVels;		// Velocity from the last frame
 
 		int* d_hashTable;		// Hash table for collision detection
-		uint16_t* d_numCols;	// Number of collisions for each segment
+		int* d_numCols;	// Number of collisions for each segment
 		Collision* d_collisions;// Collisions
 
 		vec3 gravity;			// Gravity
@@ -75,6 +75,7 @@ namespace YarnBall {
 		float maxSegLen;		// Largest segment length
 		float minSegLen;		// Largest segment length
 
+		float accelerationRatio;// Solver acceleration ratio
 		float radius;			// Yarn radius. Note that this is the minimum radius. The actual radius is r + 0.5 * barrierThickness
 		float barrierThickness;	// Collision energy barrier thickness. This is the barrier between yarns.
 		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
