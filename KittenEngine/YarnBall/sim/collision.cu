@@ -132,9 +132,9 @@ namespace YarnBall {
 	void Sim::detectCollisions() {
 		// Rebuild hashmap
 		cudaMemsetAsync(meta.d_hashTable, 0, sizeof(int) * meta.hashTableSize, stream);
-		buildTable << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta, meta.maxSegLen * meta.detectionScaler, d_error);
+		buildTable << <(meta.numVerts + 31) / 32, 32, 0, stream >> > (d_meta, meta.maxSegLen * meta.detectionScaler, d_error);
 
 		// Build collision list
-		buildCollisionList << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta, d_error);
+		buildCollisionList << <(meta.numVerts + 31) / 32, 32, 0, stream >> > (d_meta, d_error);
 	}
 }
