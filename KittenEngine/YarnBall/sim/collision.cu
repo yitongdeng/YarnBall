@@ -29,7 +29,7 @@ namespace YarnBall {
 		const int* table = data->d_hashTable;
 		const int tSize = data->hashTableSize;
 		int entry = (hash % tSize + tSize) % tSize;
-		while (atomicCAS((int*)&table[entry], 0, (int)tid)) 
+		while (atomicCAS((int*)&table[entry], 0, (int)tid + 1))
 			entry = (entry + 1) % tSize;
 	}
 
@@ -74,8 +74,8 @@ namespace YarnBall {
 					int entry = (hash % tSize + tSize) % tSize;
 					while (true) {
 						Collision col;
-						col.oid = table[entry];
-						if (col.oid == 0) break;
+						col.oid = table[entry] - 1;
+						if (col.oid < 0) break;
 
 						// Discrete collision detection
 						if (col.oid != tid && col.oid != tid + 1 && col.oid != tid - 1)			// Exempt neighboring segments
