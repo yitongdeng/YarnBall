@@ -41,9 +41,9 @@ namespace YarnBall {
 	} Vertex;
 
 	typedef struct {
-		vec2 uv;			// UV coordinates of the collision. uv.x is the current segment. uv.y is the other segment
-		int oid;			// Indices of the other segment
 		vec3 normal;		// Normal of the collision
+		int oid;			// Indices of the other segment
+		vec2 uv;			// UV coordinates of the collision. uv.x is the current segment. uv.y is the other segment
 	} Collision;
 
 	typedef struct {
