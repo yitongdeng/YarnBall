@@ -29,11 +29,8 @@ namespace YarnBall {
 		const int* table = data->d_hashTable;
 		const int tSize = data->hashTableSize;
 		int entry = (hash % tSize + tSize) % tSize;
-		while (true) {
-			if (!atomicCAS((int*)&table[entry], 0, (int)tid))
-				break;
+		while (atomicCAS((int*)&table[entry], 0, (int)tid)) 
 			entry = (entry + 1) % tSize;
-		}
 	}
 
 	__global__ void buildCollisionList(MetaData* data, int* errorReturn) {
