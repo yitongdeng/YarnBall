@@ -12,7 +12,7 @@ namespace YarnBall {
 
 	// This should really NEVER be exceeded.
 	constexpr int MAX_COLLISIONS_PER_SEGMENT = 64;
-	constexpr int COLLISION_HASH_RATIO = 11;
+	constexpr float COLLISION_HASH_RATIO = 17.0f;
 
 	enum class VertexFlags {
 		hasPrev = 1,		// Whether the vertex has a previous vertex

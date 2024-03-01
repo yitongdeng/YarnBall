@@ -24,7 +24,7 @@ namespace YarnBall {
 		meta.time = 0.f;
 		meta.collisionPeriod = 8;
 		meta.numItr = 8;
-		meta.hashTableSize = max(1024, 27 * numVerts * COLLISION_HASH_RATIO) + 17;
+		meta.hashTableSize = max(1024, (int)ceil(numVerts * COLLISION_HASH_RATIO)) + 17;
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
