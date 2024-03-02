@@ -94,7 +94,7 @@ void initScene() {
 	Kit::ambientLight.col = vec4(0);
 
 	camera.angle = vec2(30, 30);
-	if (true) {
+	if (false) {
 		try {
 			sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
 			// sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
@@ -118,7 +118,7 @@ void initScene() {
 		sim->printErrors = false;
 		sim->renderShaded = true;
 	}
-	else if (true) {
+	else if (false) {
 		constexpr int numVerts = 64;
 		sim = new YarnBall::Sim(numVerts);
 		const float segLen = 0.002f;
@@ -149,7 +149,6 @@ void initScene() {
 
 		for (size_t i = 0; i < 32; i++)
 			sim->verts[i].pos = vec3(segLen * i, 0, 0);
-		//	sim->verts[i].pos = vec3(segLen * i, (i % 2) * segLen, 0);
 		for (size_t i = 0; i < 32; i++)
 			sim->verts[i + 32].pos = vec3(segLen * 12, -4 * segLen, segLen * i - 16 * segLen);
 
@@ -160,8 +159,11 @@ void initScene() {
 		sim->configure();
 		sim->setKBend(3e-9);
 		sim->setKStretch(1e-2);
+		sim->meta.kCollision = 5e-7;
+		sim->meta.frictionCoeff = 0.0f;
+		sim->maxH = 1e-4f;
 		sim->upload();
-		sim->meta.gravity = vec3(-3, -0.2, 0);
+		sim->meta.gravity = vec3(-3, -1.5, 3);
 	}
 	camera.pos = sim->verts[0].pos;
 	camera.minDistance = 0.01f;
