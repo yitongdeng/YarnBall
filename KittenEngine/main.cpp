@@ -94,7 +94,7 @@ void initScene() {
 	Kit::ambientLight.col = vec4(0);
 
 	camera.angle = vec2(30, 30);
-	if (false) {
+	if (true) {
 		try {
 			sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
 			// sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");

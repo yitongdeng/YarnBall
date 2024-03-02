@@ -92,7 +92,7 @@ namespace YarnBall {
 				// Compute penetration
 				float d = (dot(col.normal, dpos + ddpos) - radius) * invb;
 				if (d > 1) continue;	// Not touching
-				d = max(d, 4e-3f);		// Clamp to some small value. This is a ratio of the barrier thickness.
+				d = max(d, 5e-3f);		// Clamp to some small value. This is a ratio of the barrier thickness.
 
 				// IPC barrier energy
 				float invd = 1 / d;
