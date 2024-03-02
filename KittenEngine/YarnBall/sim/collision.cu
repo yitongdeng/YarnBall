@@ -75,6 +75,7 @@ namespace YarnBall {
 					while (true) {
 						Collision col;
 						col.oid = table[entry] - 1;
+						entry = (entry + 1) % tSize;
 						if (col.oid < 0) break;
 
 						// Discrete collision detection
@@ -111,9 +112,6 @@ namespace YarnBall {
 								}
 								// }
 							}
-
-						// Check next entry
-						entry = (entry + 1) % tSize;
 					}
 				}
 

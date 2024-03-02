@@ -161,7 +161,8 @@ void initScene() {
 		sim->setKStretch(1e-2);
 		sim->meta.kCollision = 5e-7;
 		sim->meta.frictionCoeff = 0.0f;
-		sim->maxH = 1e-4f;
+		// sim->meta.detectionScaler = 3;
+		// sim->maxH = 1e-4f;
 		sim->upload();
 		sim->meta.gravity = vec3(-3, -1.5, 3);
 	}
