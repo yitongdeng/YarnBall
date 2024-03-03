@@ -87,8 +87,8 @@ namespace YarnBall {
 					while (true) {
 						Collision col;
 						col.oid = table[entry];
-						entry = (entry + 1) % tSize;
 						if (col.oid > tid) break;	// Let the higher thread handle this collision
+						entry = (entry + 1) % tSize;
 
 						// Discrete collision detection
 						if (col.oid != tid && col.oid != tid + 1 && col.oid != tid - 1)			// Exempt neighboring segments
