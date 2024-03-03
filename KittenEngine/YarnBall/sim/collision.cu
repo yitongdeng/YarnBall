@@ -39,8 +39,8 @@ namespace YarnBall {
 		int id = tid;
 		while (true) {
 			int old = atomicMin((int*)&table[entry], id);
-			id = max(old, id);
 			if (old == INT_MAX) break;
+			id = max(old, id);
 			entry = (entry + 1) % tSize;
 		}
 	}
