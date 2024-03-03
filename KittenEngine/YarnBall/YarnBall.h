@@ -52,7 +52,7 @@ namespace YarnBall {
 		vec3* d_lastVels;		// Velocity from the last frame
 
 		int* d_hashTable;		// Hash table for collision detection
-		uint16_t* d_numCols;	// Number of collisions for each segment
+		int* d_numCols;	// Number of collisions for each segment
 		Collision* d_collisions;// Collisions
 
 		vec3 gravity;			// Gravity

@@ -5,6 +5,12 @@
 #include "../YarnBall.h"
 
 namespace YarnBall {
+	__global__ void clearTable(MetaData* data) {
+		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+		if (tid >= data->hashTableSize) return;
+		data->d_hashTable[tid] = INT_MAX;
+	}
+
 	__global__ void buildTable(MetaData* data, float errorRadius2, int* errorReturn) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		if (tid >= data->numVerts) return;
@@ -29,8 +35,14 @@ namespace YarnBall {
 		const int* table = data->d_hashTable;
 		const int tSize = data->hashTableSize;
 		int entry = (hash % tSize + tSize) % tSize;
-		while (atomicCAS((int*)&table[entry], 0, (int)tid + 1))
+
+		int id = tid;
+		while (true) {
+			int old = atomicMin((int*)&table[entry], id);
+			id = max(old, id);
+			if (old == INT_MAX) break;
 			entry = (entry + 1) % tSize;
+		}
 	}
 
 	__global__ void buildCollisionList(MetaData* data, int* errorReturn) {
@@ -62,7 +74,7 @@ namespace YarnBall {
 		float mr2 = 2 * data->radius;
 		mr2 *= mr2;
 
-		int numCols = 0;
+		auto nCols = data->d_numCols;
 		const auto collisions = data->d_collisions;
 		// Visit every cell in the 3x3x3 neighborhood
 		for (ivec3 d(-1); d.x < 2; d.x++)
@@ -74,9 +86,9 @@ namespace YarnBall {
 					int entry = (hash % tSize + tSize) % tSize;
 					while (true) {
 						Collision col;
-						col.oid = table[entry] - 1;
+						col.oid = table[entry];
 						entry = (entry + 1) % tSize;
-						if (col.oid < 0) break;
+						if (col.oid > tid) break;	// Let the higher thread handle this collision
 
 						// Discrete collision detection
 						if (col.oid != tid && col.oid != tid + 1 && col.oid != tid - 1)			// Exempt neighboring segments
@@ -97,25 +109,32 @@ namespace YarnBall {
 								if (d2 < r2) {
 									if (d2 < mr2) // Report interpenetration
 										errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
-									if (numCols == MAX_COLLISIONS_PER_SEGMENT) {
-										errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
-										return;
-									}
-
 									col.normal *= inversesqrt(d2);
 
-									// Add entry to collision list
-									// This is getting executed by the opposing segment in the same way. 
-									// So theoretically, this thread only needs to add itself (pray to the floating point gods)
-									collisions[tid + numVerts * numCols] = col;
-									numCols++;
+									int numCols = atomicAdd(&nCols[tid], 1);
+									if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
+										errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
+									else
+										collisions[tid + numVerts * numCols] = col;
+
+									int o = col.oid;
+									col.oid = tid;
+									col.normal *= -1;
+									float tmp = col.uv.x;
+									col.uv.x = col.uv.y;
+									col.uv.y = tmp;
+
+									numCols = atomicAdd(&nCols[o], 1);
+									if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
+										errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
+									else
+										collisions[o + numVerts * numCols] = col;
 								}
 								// }
 							}
 					}
 				}
 
-		data->d_numCols[tid] = numCols;
 		/*
 		int flag = verts[tid].flags;
 		if (numCols > 0) flag |= (uint32_t)VertexFlags::colliding;
@@ -125,10 +144,11 @@ namespace YarnBall {
 
 	void Sim::detectCollisions() {
 		// Rebuild hashmap
-		cudaMemsetAsync(meta.d_hashTable, 0, sizeof(int) * meta.hashTableSize, stream);
+		clearTable << <(meta.hashTableSize + 1023) / 1024, 1024, 0, stream >> > (d_meta);
 		buildTable << <(meta.numVerts + 31) / 32, 32, 0, stream >> > (d_meta, meta.maxSegLen * meta.detectionScaler, d_error);
 
 		// Build collision list
+		cudaMemsetAsync(meta.d_numCols, 0, sizeof(int) * meta.numVerts, stream);
 		buildCollisionList << <(meta.numVerts + 31) / 32, 32, 0, stream >> > (d_meta, d_error);
 	}
 }
