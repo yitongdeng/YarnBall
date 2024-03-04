@@ -97,7 +97,7 @@ namespace YarnBall {
 								vec3 op0 = (verts[col.oid].pos - p0) + (dxs[col.oid] - dx0);
 								vec3 op1 = (verts[col.oid + 1].pos - p0) + (dxs[col.oid + 1] - dx0);
 
-								col.uv = Kit::lineClosestPoints(vec3(0), p1, op0, op1);
+								col.uv = Kit::segmentClosestPoints(vec3(0), p1, op0, op1);
 								if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
 									col.uv = vec2(0.5);
 								// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
