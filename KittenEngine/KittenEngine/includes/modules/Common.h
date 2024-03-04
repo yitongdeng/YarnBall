@@ -332,18 +332,20 @@ namespace Kitten {
 	// Returns the closest points between two segments in the form mix(a0, a1, uv.x) and mix(b0, b1, uv.y)
 	KITTEN_FUNC_DECL inline vec2 segmentClosestPoints(vec3 a0, vec3 a1, vec3 b0, vec3 b1) {
 		// Compute unrestricted uv coords
-		mat2x3 A(a1 - a0, b0 - b1);
-		vec3 diff = b0 - a0;
-		mat2 M(length2(A[0]), dot(A[0], A[1]), 0, length2(A[1]));
-		M[1][0] = M[0][1];
-		vec2 uv = inverse(M) * vec2(dot(A[0], diff), dot(A[1], diff));
+		mat2x3 A(a1 - a0, b1 - b0);
+		float a = length2(A[0]);
+		float b = dot(A[0], A[1]);
+		float c = length2(A[1]);
 
-		// Clamp to ends
-		uv = clamp(uv, vec2(0), vec2(1));
+		vec2 uv;
+		vec3 diff = b0 - a0;
+		uv.y = b * dot(A[0], diff) - a * dot(A[1], diff);
+		uv.y /= a * c - b * b;
 
 		// Reproject points onto lines in case of clamping
-		uv.x = glm::clamp(dot(mix(b0, b1, uv.y) - a0, A[0]) / M[0][0], 0.f, 1.f);
-		uv.y = glm::clamp(-dot(mix(a0, a1, uv.x) - b0, A[1]) / M[1][1], 0.f, 1.f);
+		uv.y = glm::clamp(uv.y, 0.f, 1.f);
+		uv.x = glm::clamp(dot(mix(b0, b1, uv.y) - a0, A[0]) / a, 0.f, 1.f);
+		uv.y = glm::clamp(dot(mix(a0, a1, uv.x) - b0, A[1]) / c, 0.f, 1.f);
 		return uv;
 	}
 
