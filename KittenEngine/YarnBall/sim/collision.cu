@@ -102,7 +102,6 @@ namespace YarnBall {
 									col.uv = vec2(0.5);
 								// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
 								// if ((hasLower || col.uv.x > 0) && (!(bool)(verts[col.oid].flags & (uint32_t)VertexFlags::hasPrev) || col.uv.y > 0)) {
-								col.uv = clamp(col.uv, vec2(0), vec2(1));
 								col.normal = col.uv.x * p1 - mix(op0, op1, col.uv.y);
 								float d2 = Kit::length2(col.normal);
 
