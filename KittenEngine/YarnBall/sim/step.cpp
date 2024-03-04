@@ -4,40 +4,55 @@
 namespace YarnBall {
 	void Sim::rebuildCUDAGraph() {
 		// Graph is still good
-		if (meta.collisionPeriod == lastColPeriod && meta.numItr == lastItr)
+		if (meta.numItr == lastItr)
 			return;
 		checkCudaErrors(cudaGetLastError());
 
-		// Build graph
 		cudaStreamSynchronize(stream);
-		cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
+		// Build graph with detection
+		{
+			cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
-		// Solver iterations
-		startIterate();
+			// Solver iterations
+			startIterate();
+			detectCollisions();
 
-		for (size_t i = 0; i < meta.numItr; i++) {
-			if (meta.collisionPeriod > 0 && i % meta.collisionPeriod == 0)
-				detectCollisions();
-			iterateCosserat();
+			for (size_t i = 0; i < meta.numItr; i++)
+				iterateCosserat();
+
+			endIterate();
+
+			cudaGraph_t graph;
+			cudaStreamEndCapture(stream, &graph);
+
+			if (stepGraph) cudaGraphExecDestroy(stepGraph);
+			cudaGraphInstantiate(&stepGraph, graph, NULL, NULL, 0);
+			cudaGraphDestroy(graph);
 		}
 
-		endIterate();
+		{
+			cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
-		cudaGraph_t graph;
-		cudaStreamEndCapture(stream, &graph);
+			// Solver iterations
+			startIterate();
+			if (meta.detectionPeriod >= 0)
+				recomputeContacts();
 
-		// Create graph data
-		if (stepGraph) cudaGraphExecDestroy(stepGraph);
-		cudaGraphInstantiate(&stepGraph, graph, NULL, NULL, 0);
-		cudaGraphDestroy(graph);
+			for (size_t i = 0; i < meta.numItr; i++)
+				iterateCosserat();
 
-		// Force reset collisions if we explicitly disabled them
-		if (meta.collisionPeriod <= 0) 
-			cudaMemset(meta.d_numCols, 0, sizeof(uint16_t) * meta.numVerts);
-		
+			endIterate();
+
+			cudaGraph_t graph;
+			cudaStreamEndCapture(stream, &graph);
+
+			if (stepNoDetectGraph) cudaGraphExecDestroy(stepNoDetectGraph);
+			cudaGraphInstantiate(&stepNoDetectGraph, graph, NULL, NULL, 0);
+			cudaGraphDestroy(graph);
+		}
+
 		checkCudaErrors(cudaGetLastError());
 
-		lastColPeriod = meta.collisionPeriod;
 		lastItr = meta.numItr;
 	}
 
@@ -51,8 +66,12 @@ namespace YarnBall {
 		rebuildCUDAGraph();
 		uploadMeta();
 
-		for (int s = 0; s < steps; s++)
-			cudaGraphLaunch(stepGraph, stream);
+		for (int s = 0; s < steps; s++, stepCounter++) {
+			if (meta.detectionPeriod > 0 && stepCounter % meta.detectionPeriod == 0)
+				cudaGraphLaunch(stepGraph, stream);
+			else
+				cudaGraphLaunch(stepNoDetectGraph, stream);
+		}
 
 		meta.time += h;
 		checkErrors();

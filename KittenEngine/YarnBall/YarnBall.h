@@ -86,7 +86,8 @@ namespace YarnBall {
 		float barrierThickness;	// Collision energy barrier thickness. This is the barrier between yarns.
 		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
 		float kCollision;		// Stiffness of the collision
-		int collisionPeriod;	// The number of frames in between to check for collisions. -1 to turn off collisions
+
+		int detectionPeriod;	// The number of steps in between to perform collision detection. -1 to turn off collisions
 		int hashTableSize;		// Size of the hash table (automatically set)
 	} MetaData;
 
@@ -114,7 +115,7 @@ namespace YarnBall {
 		bool initialized = false;
 
 		int lastItr = -1;
-		int lastColPeriod = -1;
+		size_t stepCounter = 0;
 
 		// GL stuff
 		Kitten::Mesh* cylMesh = nullptr;
@@ -123,6 +124,7 @@ namespace YarnBall {
 
 		cudaStream_t stream = nullptr;
 		cudaGraphExec_t stepGraph = nullptr;
+		cudaGraphExec_t stepNoDetectGraph = nullptr;
 
 	public:
 		Sim(int numVerts);
@@ -156,6 +158,7 @@ namespace YarnBall {
 		void iterateCosserat();
 		void iterateSpring();
 		void transferSegmentData();
+		void recomputeContacts();
 		void checkErrors();
 
 		void rebuildCUDAGraph();

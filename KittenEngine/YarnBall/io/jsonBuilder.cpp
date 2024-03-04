@@ -59,8 +59,8 @@ namespace YarnBall {
 				sim->maxH = simRoot["maxTimeStep"].asFloat();
 			if (!simRoot["numIterations"].isNull())
 				sim->meta.numItr = simRoot["numIterations"].asInt();
-			if (!simRoot["collisionPeriod"].isNull())
-				sim->meta.collisionPeriod = simRoot["collisionPeriod"].asInt();
+			if (!simRoot["detectionPeriod"].isNull())
+				sim->meta.detectionPeriod = simRoot["detectionPeriod"].asInt();
 			if (!simRoot["detectionScaler"].isNull())
 				sim->meta.detectionScaler = simRoot["detectionScaler"].asInt();
 		}

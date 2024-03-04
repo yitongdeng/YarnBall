@@ -22,7 +22,7 @@ namespace YarnBall {
 		meta.detectionScaler = 2.f;
 		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
-		meta.collisionPeriod = 8;
+		meta.detectionPeriod = 1;
 		meta.numItr = 8;
 		meta.hashTableSize = max(1024, (int)ceil(numVerts * COLLISION_HASH_RATIO)) + 17;
 
@@ -58,6 +58,7 @@ namespace YarnBall {
 		}
 		if (d_error) cudaFree(d_error);
 		if (stepGraph) cudaGraphExecDestroy(stepGraph);
+		if (stepNoDetectGraph) cudaGraphExecDestroy(stepNoDetectGraph);
 		if (cylMesh) delete cylMesh;
 		if (cylMeshHiRes) delete cylMeshHiRes;
 	}
@@ -139,6 +140,7 @@ namespace YarnBall {
 
 		cudaMalloc(&meta.d_hashTable, sizeof(int) * meta.hashTableSize);
 		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
+		cudaMemset(meta.d_numCols, 0, sizeof(int) * meta.numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
@@ -217,18 +219,18 @@ namespace YarnBall {
 
 		if (error[0] == ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED) {
 			if (printErrors) fprintf(stderr, "ERROR: MAX_COLLISIONS_PER_SEGMENT exceeded. Current simulation state may be corrupted!\n");
-			//throw std::runtime_error("MAX_COLLISIONS_PER_SEGMENT exceeded");
+			throw std::runtime_error("MAX_COLLISIONS_PER_SEGMENT exceeded");
 		}
 		else if (error[0] != ERROR_NONE) {
 			if (printErrors) fprintf(stderr, "ERROR: Undescript error %d\n", error[0]);
-			//throw std::runtime_error("Indescript error");
+			throw std::runtime_error("Indescript error");
 		}
 
 		if (printErrors)
 			if (error[1] == WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER)
 				fprintf(stderr, "WARNING: Excessive segment stretching detected. Missed collisions possible due to insufficient detection radius.\n");
 			else if (error[1] == WARNING_SEGMENT_INTERPENETRATION)
-				fprintf(stderr, "WARNING: Some collisions have been temporarily disabled due to interpenetration.\n");
+				fprintf(stderr, "WARNING: Interpenetration detection. This can be due to unstable contacts\n");
 			else if (error[1] != ERROR_NONE)
 				fprintf(stderr, "WARNING: Indescript warning %d\n", error[1]);
 

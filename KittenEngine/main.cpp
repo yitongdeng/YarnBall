@@ -46,7 +46,8 @@ void renderScene() {
 void renderGui() {
 	ImGui::Begin("Control Panel");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::Text("Measured simulation speed %.2f sim sec per real sec (INCLUDES EXPORT OVERHEAD IF ON)", measuredSimSpeed);
+	ImGui::Text("Measured simulation speed %.3f sim sec per real sec (INCLUDES EXPORT OVERHEAD IF ON)", measuredSimSpeed);
+	ImGui::Text("Sim time: %.3f", sim->meta.time);
 
 	if (ImGui::TreeNode("Simulation")) {
 		ImGui::Checkbox("Simulate", &simulate);
@@ -113,7 +114,7 @@ void initScene() {
 			if (sim->verts[i].pos.y > maxY)
 				sim->verts[i].invMass = 0;
 		sim->upload();
-
+		// sim->meta.gravity.y = -40;
 		printf("Total verts: %d\n", sim->meta.numVerts);
 		sim->printErrors = false;
 		sim->renderShaded = true;
@@ -132,8 +133,6 @@ void initScene() {
 
 		sim->verts[0].invMass = sim->verts[32].invMass = sim->verts[63].invMass = 0;
 		sim->verts[31].flags = 0;
-		sim->meta.detectionScaler = 1;
-		sim->meta.collisionPeriod = 1;
 		sim->meta.kCollision = 1e-7;
 		sim->configure();
 		sim->setKBend(1e-7);

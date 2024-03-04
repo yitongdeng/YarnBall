@@ -74,7 +74,7 @@ namespace YarnBall {
 						entry = (entry + 1) % tSize;
 
 						// Discrete collision detection
-						if (col.oid != tid && col.oid != tid + 1 && col.oid != tid - 1) {			// Exempt neighboring segments
+						if (abs(col.oid - tid) > 2) {			// Exempt neighboring segments
 							auto s1 = segs[col.oid];
 							vec3 diff = s1.position - s0.position;
 							col.uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
@@ -130,6 +130,52 @@ namespace YarnBall {
 		// Build collision list
 		cudaMemsetAsync(meta.d_numCols, 0, sizeof(int) * meta.numVerts, stream);
 		buildCollisionList << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta, d_error);
+	}
+
+	__global__ void recomputeContactsKernel(MetaData* data) {
+		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+		const int numVerts = data->numVerts;
+		if (tid >= numVerts) return;
+
+		const auto verts = data->d_verts;
+		const auto dxs = data->d_dx;
+		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
+
+		// Linear change
+		vec3 p0 = verts[tid].pos;
+		vec3 p0dx = dxs[tid];
+		vec3 p1 = verts[tid + 1].pos;
+		vec3 p1dx = dxs[tid + 1];
+		Segment s0 = { p0 + p0dx, (p1 - p0) + (p1dx - p0dx) };
+
+		// Collision energy of this segment
+		const int numCols = data->d_numCols[tid];
+		const auto collisions = data->d_collisions + tid;
+		for (int i = 0; i < numCols; i++) {
+			Collision col = collisions[i * numVerts];
+
+			vec3 op0 = verts[col.oid].pos;
+			vec3 op0dx = dxs[col.oid];
+			vec3 op1 = verts[col.oid + 1].pos;
+			vec3 op1dx = dxs[col.oid + 1];
+			Segment s1 = { op0 + op0dx, (op1 - op0) + (op1dx - op0dx) };
+
+			// Recompute contact data
+			vec3 diff = s1.position - s0.position;
+			col.uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
+			if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
+				col.uv = vec2(0.5);
+
+			// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
+			col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
+			col.normal = normalize(col.normal);
+
+			collisions[i * numVerts] = col;
+		}
+	}
+
+	void Sim::recomputeContacts() {
+		recomputeContactsKernel << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
 	}
 
 	__global__ void transferSegmentDataKernel(Vertex* verts, vec3* dxs, Segment* segment, int numVerts) {
