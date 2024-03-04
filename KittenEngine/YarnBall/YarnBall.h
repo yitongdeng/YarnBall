@@ -47,9 +47,15 @@ namespace YarnBall {
 	} Collision;
 
 	typedef struct {
+		vec3 position;
+		vec3 delta;
+	} Segment;
+
+	typedef struct {
 		Vertex* d_verts;		// Device vertex array pointer
 		vec3* d_dx;				// Temporary delta position iterants. Stored as deltas for precision.
 		vec3* d_lastVels;		// Velocity from the last frame
+		Segment* d_lastSegments;// Last segment positions
 
 		int* d_hashTable;		// Hash table for collision detection
 		int* d_numCols;	// Number of collisions for each segment
@@ -149,6 +155,7 @@ namespace YarnBall {
 		void detectCollisions();
 		void iterateCosserat();
 		void iterateSpring();
+		void transferSegmentData();
 		void checkErrors();
 
 		void rebuildCUDAGraph();
