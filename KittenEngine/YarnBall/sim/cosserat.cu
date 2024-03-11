@@ -55,6 +55,8 @@ namespace YarnBall {
 
 		vec3 f2(0);
 		hess3 H2(0);
+		float stepLimit = INFINITY;
+		float stepLimit2 = INFINITY;
 
 		// Next segment energy
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
@@ -90,7 +92,10 @@ namespace YarnBall {
 				vec3 ddpos = mix(dx, p1dx, col.uv.x) - mix(dxs[col.oid], dxs[col.oid + 1], col.uv.y);
 
 				// Compute penetration
-				float d = (dot(col.normal, dpos + ddpos) - radius) * invb;
+				float d = dot(col.normal, dpos + ddpos) - radius;
+				if (col.uv.x < 1) stepLimit = min(stepLimit, d / (1 - col.uv.x));
+				if (col.uv.x > 0) stepLimit2 = min(stepLimit2, d / col.uv.x);
+				d *= invb;
 				if (d > 1) continue;	// Not touching
 				d = max(d, 5e-3f);		// Clamp to some small value. This is a ratio of the barrier thickness.
 
@@ -131,9 +136,9 @@ namespace YarnBall {
 			}
 		}
 
-		__shared__ vec3 forces[BLOCK_SIZE];
+		__shared__ vec4 forces[BLOCK_SIZE];
 		__shared__ hess3 hessians[BLOCK_SIZE];
-		forces[threadIdx.x] = f2;
+		forces[threadIdx.x] = vec4(f2, stepLimit2);
 		hessians[threadIdx.x] = H2;
 
 		__syncthreads();
@@ -142,13 +147,25 @@ namespace YarnBall {
 		if (!threadIdx.x) return;
 
 		if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
-			f += forces[threadIdx.x - 1];
+			vec4 v = forces[threadIdx.x - 1];
+			stepLimit = min(stepLimit, v.w);
+			f += vec3(v);
 			H += hessians[threadIdx.x - 1];
 		}
 
 		if (v0.invMass != 0) {
-			// Local solve and update
-			dx += data->accelerationRatio * (inverse((mat3)H) * f);
+			// Local solve
+			vec3 delta = data->accelerationRatio * (inverse((mat3)H) * f);
+
+			// Prevent lockup when stepLimit is 0
+			// Limit to 0.25 * stepLimit since there are four vertices in a collision. We expect all four to move.
+			// 0.2 to give some leeway for inaccurate contacts.
+			float l = length(delta);
+			stepLimit = max(0.2f * stepLimit, 0.01f * l);
+			if (l > stepLimit && l > 0) delta *= stepLimit / l;
+
+			// Apply update
+			dx += delta;
 			dxs[tid] = dx;
 		}
 
