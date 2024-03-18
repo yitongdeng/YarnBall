@@ -149,6 +149,8 @@ namespace YarnBall {
 		void step(float dt);
 		float advance(float dt);
 
+		void printCollisionStats();
+
 	private:
 		void uploadMeta();
 

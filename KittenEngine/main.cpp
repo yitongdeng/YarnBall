@@ -56,7 +56,12 @@ void renderGui() {
 
 		ImGui::SliderFloat("Time Scale", &timeScale, 0.001, 2);
 		ImGui::DragFloat3("Gravity", (float*)&sim->meta.gravity);
+		ImGui::Separator();
 
+		if (ImGui::Button("Print Cols"))
+			sim->printCollisionStats();
+
+		ImGui::Separator();
 		ImGui::TreePop();
 	}
 
