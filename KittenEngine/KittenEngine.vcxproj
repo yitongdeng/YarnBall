@@ -253,7 +253,6 @@
     <ClInclude Include="KittenEngine\opt\svd\Singular_Value_Decomposition_Main_Kernel_Body.hpp" />
     <ClInclude Include="KittenEngine\opt\svd\Singular_Value_Decomposition_Preamble.hpp" />
     <ClInclude Include="KittenEngine\opt\toms178.hpp" />
-    <ClInclude Include="YarnBall\hess3.h" />
     <ClInclude Include="YarnBall\YarnBall.h" />
   </ItemGroup>
   <ItemGroup>

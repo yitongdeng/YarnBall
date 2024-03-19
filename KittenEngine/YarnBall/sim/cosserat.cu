@@ -1,9 +1,11 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include "../YarnBall.h"
-#include "../hess3.h"
+#include "KittenEngine/includes/modules/SymMat.h"
 
 namespace YarnBall {
+	using Kit::hess3;
+
 	__device__ inline vec4 inverseTorque(vec3 f, vec4 b) {
 		float f2 = length2(f);
 		float s = sqrt(f2) + length(b);
