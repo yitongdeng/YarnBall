@@ -124,12 +124,12 @@ namespace YarnBall {
 		transferSegmentData();
 
 		// Rebuild hashmap
-		clearTable << <(meta.hashTableSize + 511) / 512, 512 >> > (d_meta);
-		buildTable << <(meta.numVerts + 127) / 128, 128 >> > (d_meta, meta.maxSegLen * meta.detectionScaler, d_error);
+		clearTable << <(meta.hashTableSize + 511) / 512, 512, 0, stream >> > (d_meta);
+		buildTable << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta, meta.maxSegLen * meta.detectionScaler, d_error);
 
 		// Build collision list
-		cudaMemset(meta.d_numCols, 0, sizeof(int) * meta.numVerts);
-		buildCollisionList << <(meta.numVerts + 127) / 128, 128 >> > (d_meta, d_error);
+		cudaMemsetAsync(meta.d_numCols, 0, sizeof(int) * meta.numVerts, stream);
+		buildCollisionList << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta, d_error);
 	}
 
 	__global__ void recomputeContactsKernel(MetaData* data) {
@@ -194,6 +194,6 @@ namespace YarnBall {
 	}
 
 	void Sim::transferSegmentData() {
-		transferSegmentDataKernel << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (meta.d_verts, meta.d_dx, meta.d_lastSegments, meta.numVerts);
+		transferSegmentDataKernel << <(meta.numVerts + 127) / 128, 128 >> > (meta.d_verts, meta.d_dx, meta.d_lastSegments, meta.numVerts);
 	}
 }
