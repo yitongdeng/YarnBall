@@ -58,7 +58,6 @@ namespace YarnBall {
 		}
 		if (d_error) cudaFree(d_error);
 		if (stepGraph) cudaGraphExecDestroy(stepGraph);
-		if (stepNoDetectGraph) cudaGraphExecDestroy(stepNoDetectGraph);
 		if (cylMesh) delete cylMesh;
 		if (cylMeshHiRes) delete cylMeshHiRes;
 	}

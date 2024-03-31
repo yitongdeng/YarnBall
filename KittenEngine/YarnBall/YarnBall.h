@@ -124,7 +124,6 @@ namespace YarnBall {
 
 		cudaStream_t stream = nullptr;
 		cudaGraphExec_t stepGraph = nullptr;
-		cudaGraphExec_t stepNoDetectGraph = nullptr;
 
 	public:
 		Sim(int numVerts);
