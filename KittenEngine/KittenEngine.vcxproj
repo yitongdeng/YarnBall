@@ -242,7 +242,7 @@
     <ClInclude Include="KittenEngine\includes\modules\Timer.h" />
     <ClInclude Include="KittenEngine\includes\modules\UniformBuffer.h" />
     <ClInclude Include="KittenEngine\includes\modules\UniqueList.h" />
-    <ClInclude Include="KittenEngine\KittenGpuLBVH\lbvh.cuh" />
+    <CudaCompile Include="KittenEngine\KittenGpuLBVH\lbvh.cuh" />
     <ClInclude Include="KittenEngine\opt\arithmetic_ansi.h" />
     <ClInclude Include="KittenEngine\opt\arithmetic_sse_double.h" />
     <ClInclude Include="KittenEngine\opt\arithmetic_sse_float.h" />

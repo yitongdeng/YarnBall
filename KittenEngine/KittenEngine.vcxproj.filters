@@ -218,7 +218,6 @@
     <ClInclude Include="KittenEngine\includes\modules\SymMat.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="KittenEngine\KittenGpuLBVH\lbvh.cuh" />
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="KittenEngine\shaders\blingBase.frag" />
@@ -254,5 +253,6 @@
       <Filter>Source Files</Filter>
     </CudaCompile>
     <CudaCompile Include="KittenEngine\KittenGpuLBVH\lbvh.cu" />
+    <CudaCompile Include="KittenEngine\KittenGpuLBVH\lbvh.cuh" />
   </ItemGroup>
 </Project>
