@@ -198,6 +198,7 @@
     <ClCompile Include="YarnBall\io\bccReader.cpp" />
     <ClCompile Include="YarnBall\io\jsonBuilder.cpp" />
     <ClCompile Include="YarnBall\io\render.cpp" />
+    <CudaCompile Include="KittenEngine\KittenGpuLBVH\lbvh.cu" />
     <CudaCompile Include="YarnBall\sim\iteration.cu">
       <FileType>CppCode</FileType>
     </CudaCompile>
@@ -241,6 +242,7 @@
     <ClInclude Include="KittenEngine\includes\modules\Timer.h" />
     <ClInclude Include="KittenEngine\includes\modules\UniformBuffer.h" />
     <ClInclude Include="KittenEngine\includes\modules\UniqueList.h" />
+    <ClInclude Include="KittenEngine\KittenGpuLBVH\lbvh.cuh" />
     <ClInclude Include="KittenEngine\opt\arithmetic_ansi.h" />
     <ClInclude Include="KittenEngine\opt\arithmetic_sse_double.h" />
     <ClInclude Include="KittenEngine\opt\arithmetic_sse_float.h" />
