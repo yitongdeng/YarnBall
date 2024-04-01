@@ -227,9 +227,7 @@ namespace YarnBall {
 		}
 
 		if (printErrors)
-			if (error[1] == WARNING_SEGMENT_STRETCH_EXCEEDS_DETECTION_SCALER)
-				fprintf(stderr, "WARNING: Excessive segment stretching detected. Missed collisions possible due to insufficient detection radius.\n");
-			else if (error[1] == WARNING_SEGMENT_INTERPENETRATION)
+			if (error[1] == WARNING_SEGMENT_INTERPENETRATION)
 				fprintf(stderr, "WARNING: Interpenetration detection. This can be due to unstable contacts\n");
 			else if (error[1] != ERROR_NONE)
 				fprintf(stderr, "WARNING: Indescript warning %d\n", error[1]);
