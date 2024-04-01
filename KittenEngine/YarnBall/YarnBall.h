@@ -6,13 +6,13 @@
 #include <string>
 
 #include "KittenEngine/includes/KittenEngine.h"
+#include "KittenEngine/KittenGpuLBVH/lbvh.cuh"
 
 namespace YarnBall {
 	using namespace glm;
 
 	// This should really NEVER be exceeded.
 	constexpr int MAX_COLLISIONS_PER_SEGMENT = 64;
-	constexpr float COLLISION_HASH_RATIO = 17.0f;
 
 	enum class VertexFlags {
 		hasPrev = 1,		// Whether the vertex has a previous vertex
@@ -57,9 +57,10 @@ namespace YarnBall {
 		vec3* d_lastVels;		// Velocity from the last frame
 		Segment* d_lastSegments;// Last segment positions
 
-		int* d_hashTable;		// Hash table for collision detection
-		int* d_numCols;	// Number of collisions for each segment
-		Collision* d_collisions;// Collisions
+		int* d_numCols;					// Number of collisions for each segment
+		Collision* d_collisions;		// Collisions
+		Kit::LBVH::aabb* d_bounds;		// AABBs
+		ivec2* d_boundColList;			// Colliding AABBs
 
 		vec3 gravity;			// Gravity
 		int numItr;				// Number of iterations used per time step
@@ -70,7 +71,6 @@ namespace YarnBall {
 		float h;				// Time step (automatically set)
 		float lastH;			// Last time step
 		float time;				// Current time
-		float colGridSize;		// Collision hashmap grid size (automatically set)
 		float detectionRadius;	// Total detection radius of the yarn (automatically set)
 
 		float drag;				// Velocity decay
@@ -87,8 +87,8 @@ namespace YarnBall {
 		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
 		float kCollision;		// Stiffness of the collision
 
+		int bvhRebuildPeriod;	// The number of collision queries in between rebuilding the BVH.
 		int detectionPeriod;	// The number of steps in between to perform collision detection. -1 to turn off collisions
-		int hashTableSize;		// Size of the hash table (automatically set)
 	} MetaData;
 
 	class Sim {
@@ -113,7 +113,9 @@ namespace YarnBall {
 		MetaData* d_meta = nullptr;
 		int* d_error = nullptr;
 		bool initialized = false;
+		Kit::LBVH bvh;
 
+		int lastBVHRebuild = 100000;
 		int lastItr = -1;
 		size_t stepCounter = 0;
 

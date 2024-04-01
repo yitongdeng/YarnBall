@@ -15,6 +15,7 @@ namespace YarnBall {
 				totCols += numCols[i];
 				numSegWithCols++;
 			}
+		totCols /= 2;
 
 		printf("Total collisions: %zd\n", totCols);
 		printf("Segments with collisions: %d/%d\n", numSegWithCols, meta.numVerts);

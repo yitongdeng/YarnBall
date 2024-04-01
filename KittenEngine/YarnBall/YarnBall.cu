@@ -23,8 +23,8 @@ namespace YarnBall {
 		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
 		meta.detectionPeriod = 1;
+		meta.bvhRebuildPeriod = 8;
 		meta.numItr = 8;
-		meta.hashTableSize = max(1024, (int)ceil(numVerts * COLLISION_HASH_RATIO)) + 17;
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
@@ -51,9 +51,10 @@ namespace YarnBall {
 			cudaFree(meta.d_dx);
 			cudaFree(meta.d_lastVels);
 			cudaFree(meta.d_lastSegments);
-			cudaFree(meta.d_hashTable);
 			cudaFree(meta.d_numCols);
 			cudaFree(meta.d_collisions);
+			cudaFree(meta.d_bounds);
+			cudaFree(meta.d_boundColList);
 			cudaFree(d_meta);
 		}
 		if (d_error) cudaFree(d_error);
@@ -137,10 +138,11 @@ namespace YarnBall {
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_lastSegments, sizeof(Segment) * numVerts);
 
-		cudaMalloc(&meta.d_hashTable, sizeof(int) * meta.hashTableSize);
 		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
 		cudaMemset(meta.d_numCols, 0, sizeof(int) * meta.numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
+		cudaMalloc(&meta.d_bounds, sizeof(Kit::LBVH::aabb) * numVerts);
+		cudaMalloc(&meta.d_boundColList, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
 		meta.d_verts = (Vertex*)vertBuffer->cudaPtr;
@@ -178,7 +180,6 @@ namespace YarnBall {
 
 	void Sim::uploadMeta() {
 		meta.detectionRadius = meta.detectionScaler * (meta.radius + 0.5f * meta.barrierThickness);
-		meta.colGridSize = meta.maxSegLen + 2 * meta.detectionRadius;
 
 		if (meta.minSegLen < 2 * meta.radius + meta.barrierThickness)
 			throw std::runtime_error("Use thinner yarn or use longer segments. (Min seg length must be at least 2 * radius + barrierThickness");
