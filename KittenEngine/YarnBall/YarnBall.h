@@ -87,7 +87,7 @@ namespace YarnBall {
 		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
 		float kCollision;		// Stiffness of the collision
 
-		int bvhRebuildPeriod;	// The number of collision queries in between rebuilding the BVH.
+		float bvhRebuildPeriod;	// The time in between rebuilding the BVH.
 		int detectionPeriod;	// The number of steps in between to perform collision detection. -1 to turn off collisions
 	} MetaData;
 
@@ -114,7 +114,7 @@ namespace YarnBall {
 		bool initialized = false;
 		Kit::LBVH bvh;
 
-		int lastBVHRebuild = 100000;
+		float lastBVHRebuild = std::numeric_limits<float>::infinity();
 		int lastItr = -1;
 		size_t stepCounter = 0;
 

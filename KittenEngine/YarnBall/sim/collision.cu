@@ -94,11 +94,11 @@ namespace YarnBall {
 		buildAABBs << <(meta.numVerts + 255) / 256, 256 >> > (d_meta, d_error);
 		if (lastBVHRebuild >= meta.bvhRebuildPeriod) {
 			bvh.compute(meta.d_bounds, meta.numVerts);
-			lastBVHRebuild = 1;
+			lastBVHRebuild = 0;
 		}
 		else {
 			bvh.refit();
-			lastBVHRebuild++;
+			lastBVHRebuild += meta.h * meta.detectionPeriod;
 		}
 
 		int numCols = bvh.query(meta.d_boundColList, meta.numVerts * MAX_COLLISIONS_PER_SEGMENT);
