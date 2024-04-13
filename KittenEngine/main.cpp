@@ -30,7 +30,9 @@ void renderScene() {
 		measuredSimSpeed = mix(measuredSimSpeed, advTime / measuredTime, 0.05f);
 	}
 
-	Kit::lights[0].pos = camera.pos;
+	auto bounds = sim->bounds();
+	Kit::lights[0].pos = bounds.center();
+	Kit::shadowDist = length(bounds.max - bounds.min) * 0.5f;
 	Kit::projMat = glm::perspective(45.0f, Kit::getAspect(), 0.005f, 512.f);
 	Kit::viewMat = camera.getViewMatrix();
 

@@ -150,6 +150,7 @@ namespace YarnBall {
 		float advance(float dt);
 
 		void printCollisionStats();
+		Kitten::LBVH::aabb bounds();
 
 	private:
 		void uploadMeta();

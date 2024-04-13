@@ -63,6 +63,10 @@ namespace YarnBall {
 		if (cylMeshHiRes) delete cylMeshHiRes;
 	}
 
+	Kitten::LBVH::aabb Sim::bounds() {
+		return bvh.bounds();
+	}
+
 	void Sim::configure(float density) {
 		const int numVerts = meta.numVerts;
 
