@@ -58,7 +58,6 @@ namespace YarnBall {
 		vec3 f2(0);
 		hess3 H2(0);
 		float stepLimit = INFINITY;
-		float stepLimit2 = INFINITY;
 
 		// Next segment energy
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
@@ -95,8 +94,7 @@ namespace YarnBall {
 
 				// Compute penetration
 				float d = dot(col.normal, dpos + ddpos) - radius;
-				if (col.uv.x < 1) stepLimit = min(stepLimit, d / (1 - col.uv.x));
-				if (col.uv.x > 0) stepLimit2 = min(stepLimit2, d / col.uv.x);
+				stepLimit = min(stepLimit, d);
 				d *= invb;
 				if (d > 1) continue;	// Not touching
 				d = max(d, 5e-3f);		// Clamp to some small value. This is a ratio of the barrier thickness.
@@ -140,7 +138,7 @@ namespace YarnBall {
 
 		__shared__ vec4 forces[BLOCK_SIZE];
 		__shared__ hess3 hessians[BLOCK_SIZE];
-		forces[threadIdx.x] = vec4(f2, stepLimit2);
+		forces[threadIdx.x] = vec4(f2, stepLimit);
 		hessians[threadIdx.x] = H2;
 
 		__syncthreads();
