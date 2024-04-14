@@ -161,7 +161,7 @@ namespace YarnBall {
 			// Limit to 0.25 * stepLimit since there are four vertices in a collision. We expect all four to move.
 			// 0.2 to give some leeway for inaccurate contacts.
 			float l = length(delta);
-			stepLimit = max(0.2f * stepLimit, 0.01f * l);
+			stepLimit = max(0.49f * stepLimit, 0.01f * l);
 			if (l > stepLimit && l > 0) delta *= stepLimit / l;
 
 			// Apply update
