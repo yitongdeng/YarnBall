@@ -57,7 +57,7 @@ namespace YarnBall {
 
 		vec3 f2(0);
 		hess3 H2(0);
-		float stepLimit = INFINITY;
+		float stepLimit = 2 * data->detectionRadius;
 
 		// Next segment energy
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
@@ -161,7 +161,7 @@ namespace YarnBall {
 			// Limit to 0.25 * stepLimit since there are four vertices in a collision. We expect all four to move.
 			// 0.2 to give some leeway for inaccurate contacts.
 			float l = length(delta);
-			stepLimit = max(0.49f * stepLimit, 0.01f * l);
+			stepLimit *= 0.49f;
 			if (l > stepLimit && l > 0) delta *= stepLimit / l;
 
 			// Apply update
