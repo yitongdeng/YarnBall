@@ -348,3 +348,7 @@ healthchecksdb
 MigrationBackup/
 
 KittenEngine/imgui.ini
+
+KittenEngine/frames/
+
+KittenEngine/frame.obj

@@ -196,6 +196,7 @@
     <ClCompile Include="KittenEngine\src\Timer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="YarnBall\io\bccReader.cpp" />
+    <ClCompile Include="YarnBall\io\fileExport.cpp" />
     <ClCompile Include="YarnBall\io\jsonBuilder.cpp" />
     <ClCompile Include="YarnBall\io\render.cpp" />
     <CudaCompile Include="KittenEngine\KittenGpuLBVH\lbvh.cu" />

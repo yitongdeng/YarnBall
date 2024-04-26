@@ -123,6 +123,7 @@ namespace YarnBall {
 		vec3 p1 = verts[tid + 1].pos;
 		vec3 p1dx = dxs[tid + 1];
 		Segment s0 = { p0 + p0dx, (p1 - p0) + (p1dx - p0dx) };
+		float minDist = data->detectionRadius;
 
 		// Collision energy of this segment
 		const int numCols = data->d_numCols[tid];
@@ -144,14 +145,17 @@ namespace YarnBall {
 
 			// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
 			col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
-			col.normal = normalize(col.normal);
+			float l = length(col.normal);
+			minDist = min(minDist, 0.49f * l);
+			col.normal *= 1 / l;
 
 			collisions[i * numVerts] = col;
 		}
+		data->d_maxStepSize[tid] = minDist;
 	}
 
 	void Sim::recomputeContacts() {
-		recomputeContactsKernel << <(meta.numVerts + 127) / 128, 128 >> > (d_meta);
+		recomputeContactsKernel << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
 	}
 
 	__global__ void transferSegmentDataKernel(Vertex* verts, vec3* dxs, Segment* segment, int numVerts) {
@@ -162,9 +166,7 @@ namespace YarnBall {
 		vec3 delta(0);
 		if (verts[tid].flags & (uint32_t)VertexFlags::hasNext) {
 			pos = verts[tid].pos;
-			vec3 dx = dxs[tid];
-			delta = (verts[tid + 1].pos - pos) + (dxs[tid + 1] - dx);
-			pos += dx;
+			delta = verts[tid + 1].pos - pos;
 		}
 		segment[tid] = { pos, delta };
 	}

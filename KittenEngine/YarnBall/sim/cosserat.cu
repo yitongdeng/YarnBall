@@ -50,17 +50,14 @@ namespace YarnBall {
 		// We need to store absolute position and position updates seperatly for floating point precision
 		// If we added these together, the update could be small enough to be rounded out, causing stability issues
 		vec3 p1, p1dx;
+		float stepLimit = INFINITY;
+		vec3 f2(0);
+		hess3 H2(0);
+
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
 			p1 = verts[tid + 1].pos;
 			p1dx = dxs[tid + 1];
-		}
-
-		vec3 f2(0);
-		hess3 H2(0);
-		float stepLimit = 2 * data->detectionRadius;
-
-		// Next segment energy
-		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
+			stepLimit = data->d_maxStepSize[tid];
 
 			// Cosserat stretching energy
 			{
@@ -94,10 +91,9 @@ namespace YarnBall {
 
 				// Compute penetration
 				float d = dot(col.normal, dpos + ddpos) - radius;
-				stepLimit = min(stepLimit, d);
 				d *= invb;
 				if (d > 1) continue;	// Not touching
-				d = max(d, 5e-3f);		// Clamp to some small value. This is a ratio of the barrier thickness.
+				d = max(d, 1e-5f);		// Clamp to some small value. This is a ratio of the barrier thickness.
 
 				// IPC barrier energy
 				float invd = 1 / d;
@@ -156,16 +152,12 @@ namespace YarnBall {
 		if (v0.invMass != 0) {
 			// Local solve
 			vec3 delta = data->accelerationRatio * (inverse((mat3)H) * f);
+			dx += delta;
 
-			// Prevent lockup when stepLimit is 0
-			// Limit to 0.25 * stepLimit since there are four vertices in a collision. We expect all four to move.
-			// 0.2 to give some leeway for inaccurate contacts.
-			float l = length(delta);
-			stepLimit *= 0.49f;
-			if (l > stepLimit && l > 0) delta *= stepLimit / l;
+			float l = length(dx);
+			if (l > stepLimit && l > 0) dx *= stepLimit / l;
 
 			// Apply update
-			dx += delta;
 			dxs[tid] = dx;
 		}
 

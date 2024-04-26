@@ -5,17 +5,6 @@
 using namespace std;
 
 namespace YarnBall {
-	struct BCCHeader {
-		char sign[3];
-		unsigned char byteCount;
-		char curveType[2];
-		char dimensions;
-		char upDimension;
-		uint64_t curveCount;
-		uint64_t totalControlPointCount;
-		char fileInfo[40];
-	};
-
 	dvec3 sampleCurve(vector<vec3>& cmr, double t) {
 		int si = glm::clamp((int)floor(t), 1, (int)cmr.size() - 3);
 		dvec3 p0 = cmr[si - 1];

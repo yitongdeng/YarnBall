@@ -13,6 +13,9 @@ namespace YarnBall {
 		{
 			cudaStreamBeginCapture(stream, cudaStreamCaptureModeGlobal);
 
+			startIterate();
+			recomputeContacts();
+
 			for (size_t i = 0; i < meta.numItr; i++)
 				iterateCosserat();
 
@@ -42,11 +45,8 @@ namespace YarnBall {
 		uploadMeta();
 
 		for (int s = 0; s < steps; s++, stepCounter++) {
-			startIterate();
 			if (meta.detectionPeriod > 0 && stepCounter % meta.detectionPeriod == 0)
 				detectCollisions();
-			else
-				recomputeContacts();
 			cudaGraphLaunch(stepGraph, stream);
 		}
 

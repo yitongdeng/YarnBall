@@ -14,6 +14,18 @@ namespace YarnBall {
 	// This should really NEVER be exceeded.
 	constexpr int MAX_COLLISIONS_PER_SEGMENT = 64;
 
+	// BCC file header
+	struct BCCHeader {
+		char sign[3];
+		unsigned char byteCount;
+		char curveType[2];
+		char dimensions;
+		char upDimension;
+		uint64_t curveCount;
+		uint64_t totalControlPointCount;
+		char fileInfo[40];
+	};
+
 	enum class VertexFlags {
 		hasPrev = 1,		// Whether the vertex has a previous vertex
 		hasNext = 2,		// Whether the vertex has a next vertex
@@ -58,6 +70,7 @@ namespace YarnBall {
 		Segment* d_lastSegments;// Last segment positions
 
 		int* d_numCols;					// Number of collisions for each segment
+		float* d_maxStepSize;			// Max step size for each vertex
 		Collision* d_collisions;		// Collisions
 		Kit::LBVH::aabb* d_bounds;		// AABBs
 		ivec2* d_boundColList;			// Colliding AABBs
@@ -151,6 +164,9 @@ namespace YarnBall {
 
 		void printCollisionStats();
 		Kitten::LBVH::aabb bounds();
+
+		void exportToBCC(std::string path);
+		void exportToOBJ(std::string path);
 
 	private:
 		void uploadMeta();

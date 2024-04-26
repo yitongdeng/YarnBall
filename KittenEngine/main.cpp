@@ -17,15 +17,71 @@ bool simulate = false;
 float timeScale = 1.;
 float measuredSimSpeed = 1;
 
+const float EXPORT_DT = 1 / 30.f;
+bool exportSim = false;
+bool twist = false;
+vector<YarnBall::Vertex> initialVerts;
+Kit::Bound<> initialBounds;
+
+vec3 rotateY(vec3 v, float angle) {
+	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
+}
+
 void renderScene() {
 	if (simulate) {
 		// Dynamic dt
+		float advTime = EXPORT_DT;
 		const float realTime = ImGui::GetIO().DeltaTime * timeScale;
-		const float advTime = glm::min(realTime, 1 / 40.f);
+		if (!exportSim)
+			advTime = glm::min(realTime, 1 / 40.f);
+
+		if (twist) {
+			sim->download();
+
+			vec3 center = 0.5f * (initialBounds.max + initialBounds.min);
+
+			static float twistTime = 0;
+			float nextTime = twistTime + advTime;
+
+			constexpr float speed = 0.5f * 2 * glm::pi<float>();
+			constexpr float end = 10.f;
+			float angle = glm::clamp(twistTime - 2.f, 0.f, end) * speed;
+			float nextAngle = glm::clamp(nextTime - 2.f, 0.f, end) * speed;
+
+			for (size_t i = 0; i < sim->meta.numVerts; i++) {
+				auto& vert = sim->verts[i];
+				auto& init = initialVerts[i];
+				if (vert.pos.y < center.y && vert.invMass == 0) {
+					vec3 pos = center + rotateY(init.pos - center, angle);
+					vec3 nextPos = center + rotateY(init.pos - center, nextAngle);
+
+					vert.pos = pos;
+					vert.vel = (nextPos - pos) / advTime;
+
+					if (twistTime > end + 3.0f) vert.invMass = init.invMass;
+				}
+			}
+
+			if (twistTime > end + 10.f) {
+				exportSim = false;
+				twist = false;
+				simulate = false;
+			}
+
+			// sim->meta.gravity = vec3(0);
+
+			sim->upload();
+			twistTime = nextTime;
+		}
 
 		Kit::StopWatch timer;
 		sim->advance(advTime);
 		float measuredTime = timer.time();
+
+		if (exportSim) {
+			static int frameID = 0;
+			sim->exportToOBJ("./frames/frame" + to_string(frameID++) + ".obj");
+		}
 
 		measuredSimSpeed = mix(measuredSimSpeed, advTime / measuredTime, 0.05f);
 	}
@@ -86,6 +142,14 @@ void renderGui() {
 	else
 		Kit::lights[0].dir = lightDir;
 
+	if (ImGui::TreeNode("Export")) {
+		ImGui::Checkbox("Export", &exportSim);
+		ImGui::Checkbox("Twist", &twist);
+		ImGui::Separator();
+		if (ImGui::Button("Export frame"))
+			sim->exportToOBJ("./frame.obj");
+	}
+
 	ImGui::End();
 }
 
@@ -114,16 +178,26 @@ void initScene() {
 			exit(-1);
 		}
 
+		// Copy initial state
+		initialVerts.resize(sim->meta.numVerts);
+		for (size_t i = 0; i < sim->meta.numVerts; i++)
+			initialVerts[i] = sim->verts[i];
+
 		// Just pin the top cm of the thing
-		float maxY = -INFINITY;
+		initialBounds = Kit::Bound<>();
 		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			maxY = glm::max(maxY, sim->verts[i].pos.y);
-		maxY -= 0.01f;
+			initialBounds.absorb(sim->verts[i].pos);
+
 		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			if (sim->verts[i].pos.y > maxY)
+			if (sim->verts[i].pos.y > initialBounds.max.y - 0.01f)
 				sim->verts[i].invMass = 0;
+
+		for (size_t i = 0; i < sim->meta.numVerts; i++)
+			if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
+				sim->verts[i].invMass = 0;
+
 		sim->upload();
-		// sim->meta.gravity.y = -40;
+		// sim->meta.gravity.y = -200;
 		printf("Total verts: %d\n", sim->meta.numVerts);
 		sim->printErrors = false;
 		sim->renderShaded = true;

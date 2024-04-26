@@ -52,6 +52,7 @@ namespace YarnBall {
 			cudaFree(meta.d_lastVels);
 			cudaFree(meta.d_lastSegments);
 			cudaFree(meta.d_numCols);
+			cudaFree(meta.d_maxStepSize);
 			cudaFree(meta.d_collisions);
 			cudaFree(meta.d_bounds);
 			cudaFree(meta.d_boundColList);
@@ -142,6 +143,7 @@ namespace YarnBall {
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_lastSegments, sizeof(Segment) * numVerts);
 
+		cudaMalloc(&meta.d_maxStepSize, sizeof(float) * numVerts);
 		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
 		cudaMemset(meta.d_numCols, 0, sizeof(int) * meta.numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(Collision) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
@@ -185,7 +187,7 @@ namespace YarnBall {
 	void Sim::uploadMeta() {
 		meta.detectionRadius = meta.detectionScaler * (meta.radius + 0.5f * meta.barrierThickness);
 
-		if (meta.minSegLen < 2 * meta.radius + meta.barrierThickness)
+		if (2 * meta.minSegLen < 2 * meta.radius + meta.barrierThickness)
 			throw std::runtime_error("Use thinner yarn or use longer segments. (Min seg length must be at least 2 * radius + barrierThickness");
 
 		cudaMemcpyAsync(d_meta, &meta, sizeof(MetaData), cudaMemcpyHostToDevice, stream);
