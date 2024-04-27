@@ -5,7 +5,7 @@
 using namespace std;
 
 namespace YarnBall {
-	dvec3 sampleCurve(vector<vec3>& cmr, double t) {
+	dvec3 sampleCurve(const vector<vec3>& cmr, double t) {
 		int si = glm::clamp((int)floor(t), 1, (int)cmr.size() - 3);
 		dvec3 p0 = cmr[si - 1];
 		dvec3 p1 = cmr[si];
@@ -15,78 +15,99 @@ namespace YarnBall {
 		return Kit::cmrSpline(p0, p1, p2, p3, t - si);
 	}
 
-	// Simple algorithm to resample a CMR spline
-	vector<vec3> resampleCMR(vector<vec3>& cmr, float tarSegLen) {
+	vector<double> resampleCMRCoords(const vector<vec3>& cmr, const double start, const double end, const double tarSegLen) {
 		vector<double> ts;
+		double i = start;
+		dvec3 lastPos = sampleCurve(cmr, i);		// Last position added to the list
+		ts.push_back(i);
 
-		int i = 1;
-		dvec3 lastPos = cmr[i];				// Last position added to the list
-		ts.push_back(1);
+		constexpr double MIN_STEP = 0.2;
+		const double r2 = tarSegLen * tarSegLen;
 
-		while (i < cmr.size() - 2) {
-			dvec3 p0 = cmr[i - 1];
-			dvec3 p1 = cmr[i];
-			dvec3 p2 = cmr[i + 1];
-			dvec3 p3 = cmr[i + 2];
+		while (i < end) {
+			i += MIN_STEP;
+			auto pos = sampleCurve(cmr, i);
+			double l0 = length2(pos - lastPos);
 
-			// Repeated find a monotonically increasing t 
-			// s.t the distance from the last point is always exactly tarSegLen
-
-			constexpr int numSamples = 3;	// Min samples to take
-			dvec3 s0 = p1;		// Last position where the distance value was calculated
-			double t0 = 0;
-
-			for (int j = 0; j < numSamples; j++) {
-				const double t1 = (j + 1) / (double)numSamples;
-				const dvec3 s1 = Kit::cmrSpline(p0, p1, p2, p3, t1);
-				double l1 = length(s1 - lastPos);
-
-				// The next sample is outside the sphere
-				double l0 = length(s0 - lastPos);
-				while (l1 >= tarSegLen) {
-					double t = t1 + (t1 - t0) * (tarSegLen - l1) / (l1 - l0);
-
-					for (int k = 0; k < 16; k++) {
-						dvec3 x = Kit::cmrSpline(p0, p1, p2, p3, t);
-						double d = length(x - lastPos);
-						t += (t - t0) * (tarSegLen - d) / (d - l0);
-					}
-
-					ts.push_back(i + t);
-					lastPos = Kit::cmrSpline(p0, p1, p2, p3, t);
-					l1 = length(s1 - lastPos);
-
-					l0 = 0;
-					t0 = t;
+			// We overshot the target length
+			if (l0 > r2) {
+				// Figure out exactly where to place this point.
+				l0 = sqrt(l0);
+				const double t0 = i;
+				i -= 0.5 * MIN_STEP;	// Take half a step back
+				for (int k = 0; k < 8; k++) {
+					dvec3 x = sampleCurve(cmr, i);
+					double d = length(x - lastPos);
+					i += (i - t0) * (tarSegLen - d) / (d - l0);
 				}
 
-				t0 = t1;
-				s0 = s1;
+				ts.push_back(i);
+				lastPos = sampleCurve(cmr, i);
 			}
-
-			i++;
 		}
 
-		if (true) {
+		if (ts.size() == 1)
+			ts.push_back(end);
+		else if (true) {
+			// Move points around to make the last point line up with the end
+
+			double d = length(sampleCurve(cmr, ts.back()) - sampleCurve(cmr, end));
+			// This is the approximate segLen in coordinate space
+			double dt = ts.back() - ts[ts.size() - 2];
+
 			// Check how far the last point is from the end
 			// Add a new point if its easier to do so
-			double d = length(sampleCurve(cmr, ts.back()) - (dvec3)cmr[cmr.size() - 2]);
-			double dt = ts[ts.size() - 1] - ts[ts.size() - 2];
 			if (d > 0.5f * tarSegLen)
-				ts.push_back(cmr.size() - 2);
+				ts.push_back(end);
 			else
-				ts.back() = cmr.size() - 2;
-			dt -= ts[ts.size() - 1] - ts[ts.size() - 2];
+				ts.back() = end;
 
-			// Now we need to go back and shift somt points to make the last point line up
-			const int N = std::min((int)ts.size(), 16);
+			// Subtract it with the final one so we can correct it back to the original.
+			dt -= ts.back() - ts[ts.size() - 2];
+
+			// Now we just shift points back while making sure that the final dt is the original one.
+			const int N = std::min((int)ts.size(), 8);
 			for (int i = 0; i < N; i++)
 				ts[ts.size() - 2 - i] -= dt * (N - i) / (double)N;
 		}
 
+		return ts;
+	}
+
+	// Simple algorithm to resample a CMR spline
+	vector<vec3> resampleCMR(const vector<vec3>& cmr, double start, double end, double tarSegLen) {
+		// Get total seglen
+		auto ts0 = resampleCMRCoords(cmr, start, end, tarSegLen);
+		double totalSegLen = 0;
+		double error0 = 0;
+		auto lastPos = sampleCurve(cmr, ts0[0]);
+		for (size_t i = 1; i < ts0.size(); i++) {
+			auto pos = sampleCurve(cmr, ts0[i]);
+			double len = length(pos - lastPos);
+			error0 = std::max(error0, glm::abs(len - tarSegLen));
+			totalSegLen += len;
+			lastPos = pos;
+		}
+
+		// Resample again with average segment length
+		const double avgSegLen = totalSegLen / (ts0.size() - 1);
+		auto ts1 = resampleCMRCoords(cmr, start, end, avgSegLen);
+		lastPos = sampleCurve(cmr, ts1[0]);
+		double error1 = 0;
+		for (size_t i = 1; i < ts1.size(); i++) {
+			auto pos = sampleCurve(cmr, ts1[i]);
+			double len = length(pos - lastPos);
+			error1 = std::max(error1, glm::abs(len - avgSegLen));
+			lastPos = pos;
+		}
+
+		// Sample from whichever has the lowest error
+		auto& ts = error0 < error1 ? ts0 : ts1;
 		vector<vec3> resampled(ts.size());
-		for (size_t i = 0; i < ts.size(); i++)
+#pragma omp parallel for schedule(static, 1024)
+		for (int i = 0; i < ts.size(); i++)
 			resampled[i] = (vec3)sampleCurve(cmr, ts[i]);
+
 		return resampled;
 	}
 
@@ -126,7 +147,7 @@ namespace YarnBall {
 			for (auto& p : points) p *= 0.01f;
 
 			if (!isPolyline)	// Resample CMR spline
-				points = resampleCMR(points, targetSegLen);
+				points = resampleCMR(points, 1, points.size() - 2, targetSegLen);
 
 			// Ignore curves with less than 3 points
 			if (numPoints < 3) continue;
@@ -172,11 +193,6 @@ namespace YarnBall {
 		}
 
 		printf("Resampled with target length %f. (max %f, min %f)\n", targetSegLen, maxLen, minLen);
-
-		if (maxLen > 1.2f * targetSegLen)
-			printf("WARNING: Resampled max len is significantly larger than target length.");
-		if (1.2f * minLen < targetSegLen)
-			printf("WARNING: Resampled min len is significantly smaller than target length.");
 
 		return sim;
 	}
