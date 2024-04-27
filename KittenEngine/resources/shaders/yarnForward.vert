@@ -27,8 +27,8 @@ void main() {
 	flags = verts[gl_InstanceID + 1].flags;
 	vec3 p3 = verts[(flags & 2) != 0 ? gl_InstanceID + 2 : gl_InstanceID + 1].pos;
 	if (flags != 3)
-		col = vec3(1, 0.2, 0.2);
-		
+		col = vec3(0.2, 1, 0.2);
+
 	vec3 pos = cmrSpline(p0, p1, p2, p3, vPos.y);
 	vec3 tangent = normalize(cmrSplineTangent(p0, p1, p2, p3, vPos.y));
 
