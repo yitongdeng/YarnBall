@@ -3,6 +3,7 @@
 #include "kittenCommonFrag.glsl"
 #include "kittenLighting.glsl"
 
+in vec3 col;
 in vec3 norm;
 in vec3 wPos;
 in vec3 mPos;
@@ -16,5 +17,5 @@ void main() {
 
 	float d = max(dot(-lDir, n), 0);
 
-	fragColor = vec4(getLightCol(wPos) * d * matColor.xyz, 0);
+	fragColor = vec4(getLightCol(wPos) * d * matColor.xyz * col, 0);
 }
