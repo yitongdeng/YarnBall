@@ -77,11 +77,21 @@ namespace YarnBall {
 
 	vector<double> twoDirectionResampleCMRCoords(const vector<vec3>& cmr, double start, double end, const double tarSegLen) {
 		// For long curves, its better to sample from both ends and then try to merge them at some point.
-		auto forward = resampleCMRCoords(cmr, start, end, tarSegLen);
-		constexpr int BORDER = 8;
-		if (forward.size() > 4 * BORDER) {
-			auto backward = resampleCMRCoords(cmr, end, start, tarSegLen);
+		vector<double> forward, backward;
+#pragma omp parallel sections
+		{
+#pragma omp section
+			{
+				forward = resampleCMRCoords(cmr, start, end, tarSegLen);
+			}
+#pragma omp section
+			{
+				backward = resampleCMRCoords(cmr, end, start, tarSegLen);
+			}
+		}
 
+		constexpr int BORDER = 8;
+		if (forward.size() > 4 * BORDER && backward.size() > 4 * BORDER) {
 			// Merge the two lists at the minimum error point
 			double minError = std::numeric_limits<double>::infinity();
 			ivec2 splitIndex(2 * BORDER);
