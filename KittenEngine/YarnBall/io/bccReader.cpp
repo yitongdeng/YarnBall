@@ -149,7 +149,7 @@ namespace YarnBall {
 
 		// Resample again with average segment length
 		const double avgSegLen = totalSegLen / (ts0.size() - 1);
-		auto ts1 = resampleCMRCoords(cmr, start, end, avgSegLen);
+		auto ts1 = twoDirectionResampleCMRCoords(cmr, start, end, avgSegLen);
 		lastPos = sampleCurve(cmr, ts1[0]);
 		double error1 = 0;
 		for (size_t i = 1; i < ts1.size(); i++) {
