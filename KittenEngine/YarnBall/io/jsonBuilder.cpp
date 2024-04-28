@@ -70,8 +70,8 @@ namespace YarnBall {
 		sim->setKStretch(kStretch);
 		sim->setKBend(kBend);
 
-		if (!simRoot["glueEndpoint"].isNull()) {
-			float radius = simRoot["glueEndpoint"].asFloat();
+		if (!root["glueEndpoint"].isNull()) {
+			float radius = root["glueEndpoint"].asFloat();
 			if (radius >= 0)
 				sim->glueEndpoints(radius);
 		}
@@ -81,35 +81,39 @@ namespace YarnBall {
 	}
 
 	void Sim::glueEndpoints(float searchRadius) {
-#pragma omp parallel for schedule(dynamic, 64)
+		std::vector<int> endPoints;
+
 		for (int i = 0; i < meta.numVerts; i++) {
 			int flag = verts[i].flags;
 			bool hasPrev = (flag & (int)VertexFlags::hasPrev) != 0;
 			bool hasNext = (flag & (int)VertexFlags::hasNext) != 0;
-			if (hasPrev ^ hasNext) { // This vertex is an endpoint
-				auto pos = verts[i].pos;
+			if (hasPrev ^ hasNext)
+				endPoints.push_back(i);
+		}
 
-				// Find closest vertex
-				float minDist = INFINITY;
-				int closest = -1;
-				for (int j = 0; j < meta.numVerts; j++) if (abs(i - j) > 2) {
-					auto dist = glm::length(pos - verts[j].pos);
-					if (dist < minDist) {
-						minDist = dist;
-						closest = j;
-					}
+#pragma omp parallel for schedule(dynamic, 1)
+		for (int k = 0; k < endPoints.size(); k++) {
+			int i = endPoints[k];
+			auto pos = verts[i].pos;
+
+			// Find closest vertex
+			float minDist = INFINITY;
+			int closest = -1;
+			for (int j = 0; j < meta.numVerts; j++) if (abs(i - j) > 2) {
+				auto dist = glm::length(pos - verts[j].pos);
+				if (dist < minDist) {
+					minDist = dist;
+					closest = j;
 				}
+			}
 
-				if (closest <= searchRadius) {
+			if (minDist <= searchRadius) {
 #pragma omp critical 
-					{
-						if (verts[closest].connectionIndex < 0) {
-							verts[closest].connectionIndex = i;
-							verts[i].connectionIndex = closest;
-							vec3 avgPos = 0.5f * (verts[i].pos + verts[closest].pos);
-							verts[i].pos = avgPos;
-							verts[closest].pos = avgPos;
-						}
+				{
+					if (verts[closest].connectionIndex < 0 && verts[i].connectionIndex < 0) {
+						verts[closest].connectionIndex = i;
+						verts[i].connectionIndex = closest;
+						verts[closest].pos = verts[i].pos = 0.5f * (verts[i].pos + verts[closest].pos);
 					}
 				}
 			}
