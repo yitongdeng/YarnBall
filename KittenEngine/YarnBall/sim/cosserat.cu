@@ -43,8 +43,8 @@ namespace YarnBall {
 		if (v0.connectionIndex >= 0) {
 			vec3 p0 = verts[v0.connectionIndex].pos;
 			vec3 p0dx = dxs[v0.connectionIndex];
-			f -= 4 * v0.kStretch * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
-			H.diag += 4 * (1 + damping) * v0.kStretch;
+			f -= 1e5f * v0.kStretch * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
+			H.diag += 1e5f * v0.kStretch * (1 + damping);
 		}
 
 		// We need to store absolute position and position updates seperatly for floating point precision
