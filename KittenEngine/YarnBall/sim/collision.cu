@@ -43,8 +43,7 @@ namespace YarnBall {
 		const auto collisions = data->d_collisions;
 
 		// Exempt self-collisions due to glueing
-		if ((s0.c0 >= 0 && (s0.c0 == s1.c0 || s0.c0 == s1.c1)) ||
-			(s0.c1 >= 0 && (s0.c1 == s1.c0 || s0.c1 == s1.c1))) return;
+		if (s0.c0 == ids.y || s0.c1 == ids.y || s0.c0 == ids.y + 1 || s0.c1 == ids.y + 1) return;
 		// Exempt neighboring segments
 		if (abs(ids.y - ids.x) <= 2) return;
 
