@@ -99,13 +99,14 @@ namespace YarnBall {
 			// Find closest vertex
 			float minDist = INFINITY;
 			int closest = -1;
-			for (int j = 0; j < meta.numVerts; j++) if (abs(i - j) > 2) {
-				auto dist = glm::length(pos - verts[j].pos);
-				if (dist < minDist) {
-					minDist = dist;
-					closest = j;
+			for (int j = 0; j < meta.numVerts; j++)
+				if (abs(i - j) > 2) {
+					auto dist = glm::length(pos - verts[j].pos);
+					if (dist < minDist) {
+						minDist = dist;
+						closest = j;
+					}
 				}
-			}
 
 			if (minDist <= searchRadius) {
 #pragma omp critical 

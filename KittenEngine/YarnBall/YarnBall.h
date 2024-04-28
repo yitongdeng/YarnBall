@@ -27,11 +27,20 @@ namespace YarnBall {
 	};
 
 	enum class VertexFlags {
-		hasPrev = 1,		// Whether the vertex has a previous vertex
-		hasNext = 2,		// Whether the vertex has a next vertex
-		fixOrientation = 4,	// Fix the orientation of the segment
-		colliding = 8,		// Whether this is colliding (unused)
+		hasPrev = 1,			// Whether the vertex has a previous vertex
+		hasNext = 2,			// Whether the vertex has a next vertex
+		hasNextOrientation = 4,	// Whether the segment has a next segment
+		fixOrientation = 8,		// Fix the orientation of the segment
+		colliding = 16,			// Whether this is colliding (unused)
 	};
+
+	inline bool hasFlag(const uint32_t flags, const VertexFlags flag) {
+		return (flags & (uint32_t)flag) != 0;
+	}
+
+	inline uint32_t setFlag(const uint32_t flags, const VertexFlags flag, const bool state) {
+		return state ? flags | (uint32_t)flag : flags & ~(uint32_t)flag;
+	}
 
 	// Simulation vertex (aligned to openGL layout)
 	// This includes everything needed to form the local hessian minus collisions

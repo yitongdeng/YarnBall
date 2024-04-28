@@ -176,7 +176,7 @@ namespace YarnBall {
 				b -= (verts[tid - 1].kBend * s) * (qq * qRest).v;
 			}
 
-			if (verts[tid + 1].flags & (uint32_t)VertexFlags::hasNext) {
+			if (v0.flags & (uint32_t)VertexFlags::hasNextOrientation) {
 				auto qq = verts[tid + 1].q;
 				float s = dot((v0.q.inverse() * qq).v, v0.qRest) > 0 ? 1 : -1;
 				b -= (v0.kBend * s) * (verts[tid + 1].q * Kit::Rotor(v0.qRest).inverse()).v;

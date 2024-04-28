@@ -23,6 +23,10 @@ namespace YarnBall {
 		data->d_bounds[tid] = aabb;
 	}
 
+	__device__ inline bool ignoreSeg(int i, int s) {
+		return i - 2 <= s && s < i + 2;
+	}
+
 	__global__ void buildCollisionList(MetaData* data, int maxCols, int* errorReturn) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		const int numVerts = data->numVerts;
@@ -43,7 +47,8 @@ namespace YarnBall {
 		const auto collisions = data->d_collisions;
 
 		// Exempt self-collisions due to glueing
-		if (s0.c0 == ids.y || s0.c1 == ids.y || s0.c0 == ids.y + 1 || s0.c1 == ids.y + 1) return;
+		if (ignoreSeg(s0.c0, ids.y) || ignoreSeg(s0.c1, ids.y) ||
+			ignoreSeg(s1.c0, ids.x) || ignoreSeg(s1.c1, ids.x)) return;
 		// Exempt neighboring segments
 		if (abs(ids.y - ids.x) <= 2) return;
 
@@ -168,10 +173,17 @@ namespace YarnBall {
 		vec3 pos(NAN);
 		vec3 delta(0);
 		ivec2 cid(-1);
-		if (verts[tid].flags & (uint32_t)VertexFlags::hasNext) {
+		int flags = verts[tid].flags;
+		if (flags & (uint32_t)VertexFlags::hasNext) {
 			pos = verts[tid].pos;
 			delta = verts[tid + 1].pos - pos;
 			cid = ivec2(verts[tid].connectionIndex, verts[tid + 1].connectionIndex);
+
+			// This is a hack to get collision ignore working for glued vertices.
+			if (cid.x < 0 && (flags & (uint32_t)VertexFlags::hasPrev) != 0)
+				cid.x = verts[tid - 1].connectionIndex;
+			if (cid.y < 0 && (flags & (uint32_t)VertexFlags::hasNextOrientation) != 0)
+				cid.y = verts[tid + 2].connectionIndex;
 		}
 		segment[tid] = { pos, cid.x, delta, cid.y };
 	}

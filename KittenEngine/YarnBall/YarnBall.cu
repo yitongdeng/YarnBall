@@ -80,14 +80,17 @@ namespace YarnBall {
 
 			// Fix flags
 			if (i < numVerts - 1) {
-				bool hasPrev = v.flags & (uint32_t)VertexFlags::hasNext;
-				verts[i + 1].flags = (verts[i + 1].flags & ~(uint32_t)VertexFlags::hasPrev) | (hasPrev ? (uint32_t)VertexFlags::hasPrev : 0);
+				bool hasNext = hasFlag(v.flags, VertexFlags::hasNext);
+				verts[i + 1].flags = setFlag(verts[i + 1].flags, VertexFlags::hasPrev, hasNext);
+
+				bool hasNextNext = hasNext && hasFlag(verts[i + 1].flags, VertexFlags::hasNext);
+				v.flags = setFlag(v.flags, VertexFlags::hasNextOrientation, hasNextNext);
 
 				// If the segment doesnt exist, then we fix the rotation
-				if (!hasPrev) v.flags |= (uint32_t)VertexFlags::fixOrientation;
+				if (!hasNext) v.flags |= (uint32_t)VertexFlags::fixOrientation;
 			}
 
-			if (!(bool)(v.flags & (uint32_t)VertexFlags::hasPrev) && !(bool)(verts[i + 1].flags & (uint32_t)VertexFlags::hasNext))
+			if (!hasFlag(v.flags, VertexFlags::hasPrev) && !hasFlag(v.flags, VertexFlags::hasNext))
 				throw std::runtime_error("Dangling segment. Yarns must be atleast 2 segments long");
 
 			v.lRest = 1.f / numVerts;

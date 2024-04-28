@@ -18,15 +18,14 @@ void main() {
 		return;
 	}
 	col = vec3(1, 1, 1);
-	if (flags != 3)
+	if ((flags & 1) == 0)
 		col = vec3(1, 0.2, 0.2);
 
 	vec3 p0 = verts[(flags & 1) != 0 ? gl_InstanceID - 1 : gl_InstanceID].pos;
 	vec3 p1 = verts[gl_InstanceID].pos;
 	vec3 p2 = verts[gl_InstanceID + 1].pos;
-	flags = verts[gl_InstanceID + 1].flags;
-	vec3 p3 = verts[(flags & 2) != 0 ? gl_InstanceID + 2 : gl_InstanceID + 1].pos;
-	if (flags != 3)
+	vec3 p3 = verts[(flags & 4) != 0 ? gl_InstanceID + 2 : gl_InstanceID + 1].pos;
+	if ((flags & 4) == 0)
 		col = vec3(0.2, 1, 0.2);
 
 	vec3 pos = cmrSpline(p0, p1, p2, p3, vPos.y);
