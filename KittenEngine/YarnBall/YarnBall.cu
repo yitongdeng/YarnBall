@@ -188,7 +188,7 @@ namespace YarnBall {
 		meta.detectionRadius = meta.detectionScaler * (meta.radius + 0.5f * meta.barrierThickness);
 
 		if (2 * meta.minSegLen < 2 * meta.radius + meta.barrierThickness)
-			throw std::runtime_error("Use thinner yarn or use longer segments. (Min seg length must be at least 2 * radius + barrierThickness");
+			throw std::runtime_error("Use thinner yarn or use longer segments. (2 * Min seg length must be at least 2 * radius + barrierThickness");
 
 		cudaMemcpyAsync(d_meta, &meta, sizeof(MetaData), cudaMemcpyHostToDevice, stream);
 	}

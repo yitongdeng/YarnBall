@@ -168,6 +168,8 @@ namespace YarnBall {
 		void exportToBCC(std::string path);
 		void exportToOBJ(std::string path);
 
+		void glueEndpoints(float searchRadius);
+
 	private:
 		void uploadMeta();
 

@@ -69,8 +69,51 @@ namespace YarnBall {
 		sim->configure(density);
 		sim->setKStretch(kStretch);
 		sim->setKBend(kBend);
-		sim->upload();
 
+		if (!simRoot["glueEndpoint"].isNull()) {
+			float radius = simRoot["glueEndpoint"].asFloat();
+			if (radius >= 0)
+				sim->glueEndpoints(radius);
+		}
+
+		sim->upload();
 		return sim;
 	}
+
+	void Sim::glueEndpoints(float searchRadius) {
+#pragma omp parallel for schedule(dynamic, 64)
+		for (int i = 0; i < meta.numVerts; i++) {
+			int flag = verts[i].flags;
+			bool hasPrev = (flag & (int)VertexFlags::hasPrev) != 0;
+			bool hasNext = (flag & (int)VertexFlags::hasNext) != 0;
+			if (hasPrev ^ hasNext) { // This vertex is an endpoint
+				auto pos = verts[i].pos;
+
+				// Find closest vertex
+				float minDist = INFINITY;
+				int closest = -1;
+				for (int j = 0; j < meta.numVerts; j++) if (abs(i - j) > 2) {
+					auto dist = glm::length(pos - verts[j].pos);
+					if (dist < minDist) {
+						minDist = dist;
+						closest = j;
+					}
+				}
+
+				if (closest <= searchRadius) {
+#pragma omp critical 
+					{
+						if (verts[closest].connectionIndex < 0) {
+							verts[closest].connectionIndex = i;
+							verts[i].connectionIndex = closest;
+							vec3 avgPos = 0.5f * (verts[i].pos + verts[closest].pos);
+							verts[i].pos = avgPos;
+							verts[closest].pos = avgPos;
+						}
+					}
+				}
+			}
+		}
+	}
+
 }
