@@ -42,41 +42,45 @@ namespace YarnBall {
 		auto nCols = data->d_numCols;
 		const auto collisions = data->d_collisions;
 
+		// Exempt self-collisions due to glueing
+		if ((s0.c0 >= 0 && (s0.c0 == s1.c0 || s0.c0 == s1.c1)) ||
+			(s0.c1 >= 0 && (s0.c1 == s1.c0 || s0.c1 == s1.c1))) return;
+		// Exempt neighboring segments
+		if (abs(ids.y - ids.x) <= 2) return;
+
 		// Discrete collision detection
-		if (abs(ids.y - ids.x) > 2) {			// Exempt neighboring segments
-			vec3 diff = s1.position - s0.position;
+		vec3 diff = s1.position - s0.position;
 
-			Collision col;
-			col.uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
-			if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
-				col.uv = vec2(0.5);
+		Collision col;
+		col.uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
+		if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
+			col.uv = vec2(0.5);
 
-			// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
-			col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
-			float d2 = Kit::length2(col.normal);
+		// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
+		col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
+		float d2 = Kit::length2(col.normal);
 
-			if (d2 < r2) {
-				if (d2 < mr2) // Report interpenetration
-					errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
-				col.normal *= inversesqrt(d2);
+		if (d2 < r2) {
+			if (d2 < mr2) // Report interpenetration
+				errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
+			col.normal *= inversesqrt(d2);
 
-				int numCols = atomicAdd(&nCols[ids.x], 1);
-				if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
-					errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
-				else {
-					col.oid = ids.y;
-					collisions[ids.x + numVerts * numCols] = col;
-				}
+			int numCols = atomicAdd(&nCols[ids.x], 1);
+			if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
+				errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
+			else {
+				col.oid = ids.y;
+				collisions[ids.x + numVerts * numCols] = col;
+			}
 
-				numCols = atomicAdd(&nCols[ids.y], 1);
-				if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
-					errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
-				else {
-					col.oid = ids.x;
-					col.normal *= -1;
-					thrust::swap(col.uv.x, col.uv.y);
-					collisions[ids.y + numVerts * numCols] = col;
-				}
+			numCols = atomicAdd(&nCols[ids.y], 1);
+			if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
+				errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
+			else {
+				col.oid = ids.x;
+				col.normal *= -1;
+				thrust::swap(col.uv.x, col.uv.y);
+				collisions[ids.y + numVerts * numCols] = col;
 			}
 		}
 
@@ -122,7 +126,7 @@ namespace YarnBall {
 		vec3 p0dx = dxs[tid];
 		vec3 p1 = verts[tid + 1].pos;
 		vec3 p1dx = dxs[tid + 1];
-		Segment s0 = { p0 + p0dx, (p1 - p0) + (p1dx - p0dx) };
+		Segment s0 = { p0 + p0dx, -1, (p1 - p0) + (p1dx - p0dx) };
 		float minDist = data->detectionRadius;
 
 		// Collision energy of this segment
@@ -135,7 +139,7 @@ namespace YarnBall {
 			vec3 op0dx = dxs[col.oid];
 			vec3 op1 = verts[col.oid + 1].pos;
 			vec3 op1dx = dxs[col.oid + 1];
-			Segment s1 = { op0 + op0dx, (op1 - op0) + (op1dx - op0dx) };
+			Segment s1 = { op0 + op0dx, -1, (op1 - op0) + (op1dx - op0dx) };
 
 			// Recompute contact data
 			vec3 diff = s1.position - s0.position;
@@ -164,11 +168,13 @@ namespace YarnBall {
 
 		vec3 pos(NAN);
 		vec3 delta(0);
+		ivec2 cid(-1);
 		if (verts[tid].flags & (uint32_t)VertexFlags::hasNext) {
 			pos = verts[tid].pos;
 			delta = verts[tid + 1].pos - pos;
+			cid = ivec2(verts[tid].connectionIndex, verts[tid + 1].connectionIndex);
 		}
-		segment[tid] = { pos, delta };
+		segment[tid] = { pos, cid.x, delta, cid.y };
 	}
 
 	void Sim::transferSegmentData() {

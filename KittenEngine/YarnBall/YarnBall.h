@@ -60,7 +60,9 @@ namespace YarnBall {
 
 	typedef struct {
 		vec3 position;
+		int c0;
 		vec3 delta;
+		int c1;
 	} Segment;
 
 	typedef struct {
