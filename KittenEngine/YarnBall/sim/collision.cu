@@ -153,7 +153,7 @@ namespace YarnBall {
 			// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
 			col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
 			float l = length(col.normal);
-			minDist = min(minDist, 0.49f * l);
+			minDist = min(minDist, 0.45f * l);
 			col.normal *= 1 / l;
 
 			collisions[i * numVerts] = col;
