@@ -4,6 +4,7 @@
 
 #include "KittenEngine/includes/KittenEngine.h"
 #include "KittenEngine/includes/modules/BasicCameraControl.h"
+#include "KittenEngine/includes/modules/Dist.h"
 
 #include "YarnBall/YarnBall.h"
 
@@ -22,6 +23,7 @@ bool exportSim = false;
 bool twist = false;
 vector<YarnBall::Vertex> initialVerts;
 Kit::Bound<> initialBounds;
+Kit::Dist simSpeedDist;
 
 vec3 rotateY(vec3 v, float angle) {
 	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
@@ -83,7 +85,11 @@ void renderScene() {
 			sim->exportToOBJ("./frames/frame" + to_string(frameID++) + ".obj");
 		}
 
-		measuredSimSpeed = mix(measuredSimSpeed, advTime / measuredTime, 0.05f);
+		if (simSpeedDist.num > 60)
+			simSpeedDist = Kit::Dist();
+		float ss = advTime / measuredTime;
+		measuredSimSpeed = mix(measuredSimSpeed, ss, 0.1f);
+		simSpeedDist.accu(ss);
 	}
 
 	auto bounds = sim->bounds();
@@ -107,6 +113,7 @@ void renderGui() {
 	ImGui::Begin("Control Panel");
 	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::Text("Measured simulation speed %.3f sim sec per real sec (INCLUDES EXPORT OVERHEAD IF ON)", measuredSimSpeed);
+	ImGui::Text("Avg %.3f, SD: %.3f, N=%d", simSpeedDist.mean(), simSpeedDist.sd(), simSpeedDist.num);
 	ImGui::Text("Sim time: %.3f", sim->meta.time);
 
 	if (ImGui::TreeNode("Simulation")) {
@@ -192,9 +199,9 @@ void initScene() {
 			if (sim->verts[i].pos.y > initialBounds.max.y - 0.01f)
 				sim->verts[i].invMass = 0;
 
-		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
-				sim->verts[i].invMass = 0;
+		// for (size_t i = 0; i < sim->meta.numVerts; i++)
+		// 	if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
+		// 		sim->verts[i].invMass = 0;
 
 		sim->upload();
 		// sim->meta.gravity.y = -200;
