@@ -47,8 +47,7 @@ namespace YarnBall {
 		const auto collisions = data->d_collisions;
 
 		// Exempt self-collisions due to glueing
-		if (ignoreSeg(s0.c0, ids.y) || ignoreSeg(s0.c1, ids.y) ||
-			ignoreSeg(s1.c0, ids.x) || ignoreSeg(s1.c1, ids.x)) return;
+		if (s0.c0 == ids.y || s0.c1 == ids.y || s0.c0 == ids.y + 1 || s0.c1 == ids.y + 1) return;
 		// Exempt neighboring segments
 		if (abs(ids.y - ids.x) <= 2) return;
 
@@ -178,12 +177,12 @@ namespace YarnBall {
 			pos = verts[tid].pos;
 			delta = verts[tid + 1].pos - pos;
 			cid = ivec2(verts[tid].connectionIndex, verts[tid + 1].connectionIndex);
-
+			/*
 			// This is a hack to get collision ignore working for glued vertices.
 			if (cid.x < 0 && (flags & (uint32_t)VertexFlags::hasPrev) != 0)
 				cid.x = verts[tid - 1].connectionIndex;
 			if (cid.y < 0 && (flags & (uint32_t)VertexFlags::hasNextOrientation) != 0)
-				cid.y = verts[tid + 2].connectionIndex;
+				cid.y = verts[tid + 2].connectionIndex;*/
 		}
 		segment[tid] = { pos, cid.x, delta, cid.y };
 	}
