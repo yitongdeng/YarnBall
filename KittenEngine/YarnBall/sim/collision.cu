@@ -124,6 +124,8 @@ namespace YarnBall {
 		const auto dxs = data->d_dx;
 		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
 
+		constexpr float SAFETY_MARGIN = 0.2f;
+
 		// Linear change
 		vec3 p0 = verts[tid].pos;
 		vec3 p0dx = dxs[tid];
@@ -154,7 +156,7 @@ namespace YarnBall {
 			// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
 			col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
 			float l = length(col.normal);
-			minDist = min(minDist, 0.45f * l);
+			minDist = min(minDist, ((1 - SAFETY_MARGIN) * 0.5f) * l);
 			col.normal *= 1 / l;
 
 			collisions[i * numVerts] = col;
@@ -178,12 +180,6 @@ namespace YarnBall {
 			pos = verts[tid].pos;
 			delta = verts[tid + 1].pos - pos;
 			cid = ivec2(verts[tid].connectionIndex, verts[tid + 1].connectionIndex);
-			/*
-			// This is a hack to get collision ignore working for glued vertices.
-			if (cid.x < 0 && (flags & (uint32_t)VertexFlags::hasPrev) != 0)
-				cid.x = verts[tid - 1].connectionIndex;
-			if (cid.y < 0 && (flags & (uint32_t)VertexFlags::hasNextOrientation) != 0)
-				cid.y = verts[tid + 2].connectionIndex;*/
 		}
 		segment[tid] = { pos, cid.x, delta, cid.y };
 	}
