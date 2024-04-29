@@ -23,7 +23,7 @@ namespace YarnBall {
 
 		if (!root["curveRadius"].isNull()) {
 			float r = root["curveRadius"].asFloat();
-			constexpr float ratio = 0.f;
+			constexpr float ratio = 0.05f;
 			sim->meta.radius = ratio * r;
 			sim->meta.barrierThickness = 2 * (1 - ratio) * r;
 		}
