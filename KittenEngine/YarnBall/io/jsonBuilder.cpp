@@ -84,9 +84,8 @@ namespace YarnBall {
 		std::vector<int> endPoints;
 
 		for (int i = 0; i < meta.numVerts; i++) {
-			int flag = verts[i].flags;
-			bool hasPrev = (flag & (int)VertexFlags::hasPrev) != 0;
-			bool hasNext = (flag & (int)VertexFlags::hasNext) != 0;
+			bool hasPrev = i && (verts[i - 1].flags & (int)VertexFlags::hasNext) != 0;
+			bool hasNext = (verts[i].flags & (int)VertexFlags::hasNext) != 0;
 			if (hasPrev ^ hasNext)
 				endPoints.push_back(i);
 		}
