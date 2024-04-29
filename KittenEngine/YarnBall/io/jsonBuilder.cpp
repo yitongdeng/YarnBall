@@ -23,7 +23,7 @@ namespace YarnBall {
 
 		if (!root["curveRadius"].isNull()) {
 			float r = root["curveRadius"].asFloat();
-			constexpr float ratio = 0.05f;
+			constexpr float ratio = 0.f;
 			sim->meta.radius = ratio * r;
 			sim->meta.barrierThickness = 2 * (1 - ratio) * r;
 		}
@@ -63,7 +63,7 @@ namespace YarnBall {
 			if (!simRoot["detectionPeriod"].isNull())
 				sim->meta.detectionPeriod = simRoot["detectionPeriod"].asInt();
 			if (!simRoot["detectionScaler"].isNull())
-				sim->meta.detectionScaler = simRoot["detectionScaler"].asInt();
+				sim->meta.detectionScaler = simRoot["detectionScaler"].asFloat();
 		}
 
 		sim->configure(density);

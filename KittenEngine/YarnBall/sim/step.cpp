@@ -26,7 +26,7 @@ namespace YarnBall {
 
 			if (stepGraph) cudaGraphExecDestroy(stepGraph);
 			cudaGraphInstantiate(&stepGraph, graph, NULL, NULL, 0);
-			cudaGraphDestroy(graph);
+			cudaGraphDestroy(graph); 
 		}
 
 		checkCudaErrors(cudaGetLastError());

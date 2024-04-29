@@ -1,7 +1,7 @@
 {
 	"curveFile": "configs/models/cable_work_pattern.bcc",
 	"resampleLength": 3e-3,
-	"curveRadius": 0.0011,
+	"curveRadius": 0.001,
 	"glueEndpoint": 0.01,
 
 	"simulation": {
@@ -10,7 +10,7 @@
 		"frictionCoeff": 0.0,
 		"kStretch": 5e-2,
 		"kBend": 1e-7,
-		"kCollision": 5e-4,
+		"kCollision": 2e-4,
 		"damping": 1e-6,
 
 		// Env
@@ -18,7 +18,7 @@
 		"drag": 0.2,
 
 		// Solver
-		"maxTimeStep": 1e-4,
+		"maxTimeStep": 2e-4,
 		"numIterations": 4,
 		"detectionPeriod": 1,
 		"detectionScaler": 1.5

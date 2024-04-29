@@ -17,7 +17,7 @@ namespace YarnBall {
 		if (glm::isfinite(seg.position.x)) {
 			aabb.absorb(seg.position);
 			aabb.absorb(seg.position + seg.delta);
-			aabb.pad(data->detectionRadius);
+			aabb.pad(data->scaledDetectionRadius);
 		}
 
 		data->d_bounds[tid] = aabb;
@@ -38,7 +38,7 @@ namespace YarnBall {
 		auto s0 = segs[ids.x];
 		auto s1 = segs[ids.y];
 
-		float r2 = 2 * data->detectionRadius;
+		float r2 = 2 * data->scaledDetectionRadius;
 		r2 *= r2;
 		float mr2 = 2 * data->radius;
 		mr2 *= mr2;
@@ -130,7 +130,8 @@ namespace YarnBall {
 		vec3 p1 = verts[tid + 1].pos;
 		vec3 p1dx = dxs[tid + 1];
 		Segment s0 = { p0 + p0dx, -1, (p1 - p0) + (p1dx - p0dx) };
-		float minDist = data->detectionRadius;
+		// This is the maximum distance possible within with the AABB query is guaranteed to find a collision
+		float minDist = data->detectionRadius * (data->detectionScaler - 1);
 
 		// Collision energy of this segment
 		const int numCols = data->d_numCols[tid];

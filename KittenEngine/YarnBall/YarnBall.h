@@ -95,24 +95,25 @@ namespace YarnBall {
 		float h;				// Time step (automatically set)
 		float lastH;			// Last time step
 		float time;				// Current time
-		float detectionRadius;	// Total detection radius of the yarn (automatically set)
-
-		float drag;				// Velocity decay
-		float damping;			// Damping forces
-		float frictionCoeff;	// Friction coefficient for contacts
-
 		int numVerts;			// Number of vertices
-		float maxSegLen;		// Largest segment length
-		float minSegLen;		// Largest segment length
 
-		float accelerationRatio;// Solver acceleration ratio
-		float radius;			// Yarn radius. Note that this is the minimum radius. The actual radius is r + 0.5 * barrierThickness
-		float barrierThickness;	// Collision energy barrier thickness. This is the barrier between yarns.
-		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
+		float damping;			// Damping forces
+		float drag;				// Velocity decay
+		float frictionCoeff;	// Friction coefficient for contacts
 		float kCollision;		// Stiffness of the collision
 
+		float detectionRadius;			// Total detection radius of the yarn (automatically set)
+		float scaledDetectionRadius;	// Detection radius scaled by the detectionScaler
+		float radius;					// Yarn radius. Note that this is the minimum radius. The actual radius is r + 0.5 * barrierThickness
+		float accelerationRatio;		// Solver acceleration ratio
+
+		float barrierThickness;	// Collision energy barrier thickness. This is the barrier between yarns.
+		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
 		float bvhRebuildPeriod;	// The time in between rebuilding the BVH.
 		int detectionPeriod;	// The number of steps in between to perform collision detection. -1 to turn off collisions
+
+		float maxSegLen;		// Largest segment length
+		float minSegLen;		// Largest segment length
 	} MetaData;
 
 	class Sim {

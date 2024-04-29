@@ -188,7 +188,11 @@ namespace YarnBall {
 	}
 
 	void Sim::uploadMeta() {
-		meta.detectionRadius = meta.detectionScaler * (meta.radius + 0.5f * meta.barrierThickness);
+		meta.detectionRadius = meta.radius + 0.5f * meta.barrierThickness;
+		meta.scaledDetectionRadius = meta.detectionRadius * meta.detectionScaler;
+
+		if (meta.detectionScaler <= 1)
+			throw std::runtime_error("Detection scaler must be greater than 1.");
 
 		if (2 * meta.minSegLen < 2 * meta.radius + meta.barrierThickness)
 			throw std::runtime_error("Use thinner yarn or use longer segments. (2 * Min seg length must be at least 2 * radius + barrierThickness");
