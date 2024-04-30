@@ -27,6 +27,8 @@ vector<YarnBall::Vertex> initialVerts;
 Kit::Bound<> initialBounds;
 Kit::Dist simSpeedDist;
 
+constexpr bool fixBottom = true;
+
 vec3 rotateY(vec3 v, float angle) {
 	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
 }
@@ -251,9 +253,10 @@ void initScene() {
 			if (sim->verts[i].pos.y > initialBounds.max.y - 0.01f)
 				sim->verts[i].invMass = 0;
 
-		// for (size_t i = 0; i < sim->meta.numVerts; i++)
-		// 	if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
-		// 		sim->verts[i].invMass = 0;
+		if (fixBottom)
+			for (size_t i = 0; i < sim->meta.numVerts; i++)
+				if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
+					sim->verts[i].invMass = 0;
 
 		sim->upload();
 		// sim->meta.gravity.y = -200;
