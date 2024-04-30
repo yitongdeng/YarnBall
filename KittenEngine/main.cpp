@@ -46,7 +46,7 @@ void renderScene() {
 			float nextTime = twistTime + advTime;
 
 			constexpr float speed = 0.5f * 2 * glm::pi<float>();
-			constexpr float end = 10.f;
+			constexpr float end = 12.f;
 			float angle = glm::clamp(twistTime - 2.f, 0.f, end) * speed;
 			float nextAngle = glm::clamp(nextTime - 2.f, 0.f, end) * speed;
 
@@ -64,7 +64,7 @@ void renderScene() {
 				}
 			}
 
-			if (twistTime > end + 10.f) {
+			if (twistTime > end + 8.f) {
 				exportSim = false;
 				twist = false;
 				simulate = false;
