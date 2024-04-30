@@ -10,7 +10,7 @@
 		"frictionCoeff": 0.0,
 		"kStretch": 5e-2,
 		"kBend": 1e-7,
-		"kCollision": 2e-4,
+		"kCollision": 4e-4,
 		"damping": 1e-6,
 
 		// Env
@@ -18,7 +18,7 @@
 		"drag": 0.2,
 
 		// Solver
-		"maxTimeStep": 2e-4,
+		"maxTimeStep": 1e-4,
 		"numIterations": 4,
 		"detectionPeriod": 1,
 		"detectionScaler": 1.5

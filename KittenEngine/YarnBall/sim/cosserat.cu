@@ -108,7 +108,7 @@ namespace YarnBall {
 				d = d - radius;
 				d *= invb;
 				if (d > 1) continue;	// Not touching
-				d = max(d, 1e-4f);		// Clamp to some small value. This is a ratio of the barrier thickness.
+				d = max(d, 1e-3f);		// Clamp to some small value. This is a ratio of the barrier thickness.
 
 				// IPC barrier energy
 				float invd = 1 / d;
