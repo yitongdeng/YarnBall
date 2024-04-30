@@ -96,7 +96,7 @@ namespace YarnBall {
 		buildCollisionList << <(numCols + 127) / 128, 128, 0, stream >> > (d_meta, numCols, d_error);
 	}
 
-	__global__ void recomputeContactsKernel(MetaData* data) {
+	__global__ void recomputeStepLimitKernel(MetaData* data) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		const int numVerts = data->numVerts;
 		if (tid >= numVerts) return;
@@ -135,8 +135,8 @@ namespace YarnBall {
 		data->d_maxStepSize[tid] = minDist;
 	}
 
-	void Sim::recomputeContacts() {
-		recomputeContactsKernel << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
+	void Sim::recomputeStepLimit() {
+		recomputeStepLimitKernel << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
 	}
 
 	__global__ void transferSegmentDataKernel(Vertex* verts, vec3* dxs, Segment* segment, int numVerts) {

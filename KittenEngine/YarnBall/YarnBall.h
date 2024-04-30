@@ -185,7 +185,7 @@ namespace YarnBall {
 		void iterateCosserat();
 		void iterateSpring();
 		void transferSegmentData();
-		void recomputeContacts();
+		void recomputeStepLimit();
 		void checkErrors();
 
 		void rebuildCUDAGraph();
