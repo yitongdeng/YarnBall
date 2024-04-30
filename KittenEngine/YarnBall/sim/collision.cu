@@ -50,12 +50,12 @@ namespace YarnBall {
 
 		// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
 		vec3 normal = uv.x * s0.delta - (diff + uv.y * s1.delta);
-		float d = Kit::length(normal);
+		float d2 = Kit::length2(normal);
 
 		float r = 2 * data->scaledDetectionRadius;
 		float mr = 2 * data->radius;
-		if (d < r) {
-			if (d < mr) // Report interpenetration
+		if (d2 < r * r) {
+			if (d2 < mr * mr) // Report interpenetration
 				errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
 
 			const auto collisions = data->d_collisions;
