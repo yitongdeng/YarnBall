@@ -41,11 +41,11 @@ namespace YarnBall {
 
 		// Special connections energy
 		if (v0.connectionIndex >= 0) {
-			constexpr float stiffness = 1e5f;
+			constexpr float stiffness = 4e1;
 			vec3 p0 = verts[v0.connectionIndex].pos;
 			vec3 p0dx = dxs[v0.connectionIndex];
-			f -= stiffness * v0.kStretch * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
-			H.diag += stiffness * v0.kStretch * (1 + damping);
+			f -= stiffness * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
+			H.diag += stiffness * (1 + damping);
 		}
 
 		// We need to store absolute position and position updates seperatly for floating point precision
