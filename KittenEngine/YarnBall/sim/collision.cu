@@ -93,47 +93,54 @@ namespace YarnBall {
 		buildCollisionList << <(numCols + 127) / 128, 128, 0, stream >> > (d_meta, numCols, d_error);
 	}
 
+	template<bool LIMIT>
 	__global__ void recomputeStepLimitKernel(MetaData* data) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		const int numVerts = data->numVerts;
 		if (tid >= numVerts) return;
 
-		const auto verts = data->d_verts;
-		const auto dxs = data->d_dx;
-		if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
+		if (LIMIT) {
+			const auto verts = data->d_verts;
+			const auto dxs = data->d_dx;
+			if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
 
-		constexpr float SAFETY_MARGIN = 0.2f;
+			constexpr float SAFETY_MARGIN = 0.2f;
 
-		// Linear change
-		auto segs = data->d_lastSegments;
-		auto s0 = segs[tid];
+			// Linear change
+			auto segs = data->d_lastSegments;
+			auto s0 = segs[tid];
 
-		// This is the maximum distance possible within with the AABB query is guaranteed to find a collision
-		float minDist = data->detectionRadius * (data->detectionScaler - 1);
+			// This is the maximum distance possible within with the AABB query is guaranteed to find a collision
+			float minDist = data->detectionRadius * (data->detectionScaler - 1);
 
-		// Collision energy of this segment
-		const int numCols = data->d_numCols[tid];
-		const auto collisions = data->d_collisions + tid;
-		for (int i = 0; i < numCols; i++) {
-			int oid = collisions[i * numVerts];
-			Segment s1 = segs[oid];
+			// Collision energy of this segment
+			const int numCols = data->d_numCols[tid];
+			const auto collisions = data->d_collisions + tid;
+			for (int i = 0; i < numCols; i++) {
+				int oid = collisions[i * numVerts];
+				Segment s1 = segs[oid];
 
-			// Recompute contact data
-			vec3 diff = s1.position - s0.position;
-			vec2 uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
-			if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
-				uv = vec2(0.5);
+				// Recompute contact data
+				vec3 diff = s1.position - s0.position;
+				vec2 uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
+				if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
+					uv = vec2(0.5);
 
-			// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
-			vec3 normal = uv.x * s0.delta - (diff + uv.y * s1.delta);
-			float l = length(normal);
-			minDist = min(minDist, ((1 - SAFETY_MARGIN) * 0.5f) * l);
+				// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
+				vec3 normal = uv.x * s0.delta - (diff + uv.y * s1.delta);
+				float l = length(normal);
+				minDist = min(minDist, ((1 - SAFETY_MARGIN) * 0.5f) * l);
+			}
+			data->d_maxStepSize[tid] = minDist;
 		}
-		data->d_maxStepSize[tid] = minDist;
+		else data->d_maxStepSize[tid] = INFINITY;
 	}
 
 	void Sim::recomputeStepLimit() {
-		recomputeStepLimitKernel << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
+		if (meta.useStepSizeLimit)
+			recomputeStepLimitKernel<true> << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
+		else
+			recomputeStepLimitKernel<false> << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
 	}
 
 	__global__ void transferSegmentDataKernel(Vertex* verts, vec3* dxs, Segment* segment, int numVerts) {

@@ -23,6 +23,7 @@ namespace YarnBall {
 		meta.frictionCoeff = 0.1f;
 		meta.time = 0.f;
 		meta.detectionPeriod = 1;
+		meta.useStepSizeLimit = 1;
 		meta.bvhRebuildPeriod = 1 / 60.f;
 		meta.numItr = 8;
 

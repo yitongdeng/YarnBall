@@ -108,6 +108,7 @@ namespace YarnBall {
 
 		float maxSegLen;		// Largest segment length
 		float minSegLen;		// Largest segment length
+		int useStepSizeLimit;	// Whether to use the step size limit
 	} MetaData;
 
 	class Sim {
