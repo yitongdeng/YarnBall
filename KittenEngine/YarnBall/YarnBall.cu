@@ -231,11 +231,11 @@ namespace YarnBall {
 		cudaStreamSynchronize(stream);
 
 		if (error[0] == ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED) {
-			if (printErrors) fprintf(stderr, "ERROR: MAX_COLLISIONS_PER_SEGMENT exceeded. Current simulation state may be corrupted!\n");
+			fprintf(stderr, "ERROR: MAX_COLLISIONS_PER_SEGMENT exceeded. Current simulation state may be corrupted!\n");
 			throw std::runtime_error("MAX_COLLISIONS_PER_SEGMENT exceeded");
 		}
 		else if (error[0] != ERROR_NONE) {
-			if (printErrors) fprintf(stderr, "ERROR: Undescript error %d\n", error[0]);
+			fprintf(stderr, "ERROR: Undescript error %d\n", error[0]);
 			throw std::runtime_error("Indescript error");
 		}
 

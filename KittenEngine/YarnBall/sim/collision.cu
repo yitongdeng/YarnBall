@@ -14,7 +14,8 @@ namespace YarnBall {
 		auto seg = data->d_lastSegments[tid];
 		Kit::LBVH::aabb aabb;
 
-		if (glm::isfinite(seg.position.x)) {
+		if (glm::all(glm::isfinite(seg.position)) &&
+			glm::all(glm::isfinite(seg.delta))) {
 			aabb.absorb(seg.position);
 			aabb.absorb(seg.position + seg.delta);
 			aabb.pad(data->scaledDetectionRadius);

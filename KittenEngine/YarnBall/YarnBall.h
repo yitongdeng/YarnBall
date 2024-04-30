@@ -12,7 +12,7 @@ namespace YarnBall {
 	using namespace glm;
 
 	// This should really NEVER be exceeded.
-	constexpr int MAX_COLLISIONS_PER_SEGMENT = 64;
+	constexpr int MAX_COLLISIONS_PER_SEGMENT = 128;
 
 	// BCC file header
 	struct BCCHeader {
