@@ -78,6 +78,32 @@ namespace YarnBall {
 				sim->glueEndpoints(radius);
 		}
 
+		if (!root["fixBorders"].isNull()) {
+			auto borders = root["fixBorders"];
+			if (borders.isArray() && borders.size() == 6) {
+				float border[6];
+				for (int i = 0; i < 6; i++)
+					border[i] = borders[i].asFloat();
+
+				// Get bounding box
+				Kit::Bound<> bounds;
+				for (int i = 0; i < sim->meta.numVerts; i++)
+					bounds.absorb(sim->verts[i].pos);
+
+				bounds.pad(0.01f * sim->meta.radius);
+				bounds.max.x -= border[0];
+				bounds.min.x += border[1];
+				bounds.max.y -= border[2];
+				bounds.min.y += border[3];
+				bounds.max.z -= border[4];
+				bounds.min.z += border[5];
+
+				for (int i = 0; i < sim->meta.numVerts; i++)
+					if (!bounds.contains(sim->verts[i].pos))
+						sim->verts[i].invMass = 0;
+			}
+		}
+
 		sim->upload();
 		return sim;
 	}

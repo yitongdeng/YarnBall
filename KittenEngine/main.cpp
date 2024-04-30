@@ -20,7 +20,9 @@ float measuredSimSpeed = 1;
 
 const float EXPORT_DT = 1 / 30.f;
 bool exportSim = false;
-bool twist = false;
+bool scenarioTwist = false;
+bool scenarioPull = false;
+bool scenarioGrav = false;
 vector<YarnBall::Vertex> initialVerts;
 Kit::Bound<> initialBounds;
 Kit::Dist simSpeedDist;
@@ -36,11 +38,10 @@ void renderScene() {
 		const float realTime = ImGui::GetIO().DeltaTime * timeScale;
 		if (!exportSim)
 			advTime = glm::min(realTime, 1 / 40.f);
+		vec3 center = 0.5f * (initialBounds.max + initialBounds.min);
 
-		if (twist) {
+		if (scenarioTwist) {
 			sim->download();
-
-			vec3 center = 0.5f * (initialBounds.max + initialBounds.min);
 
 			static float twistTime = 0;
 			float nextTime = twistTime + advTime;
@@ -66,7 +67,7 @@ void renderScene() {
 
 			if (twistTime > end + 8.f) {
 				exportSim = false;
-				twist = false;
+				scenarioTwist = false;
 				simulate = false;
 			}
 
@@ -74,6 +75,55 @@ void renderScene() {
 
 			sim->upload();
 			twistTime = nextTime;
+		}
+
+		if (scenarioPull) {
+			sim->download();
+			sim->meta.gravity = vec3(0, 0, -9.8);
+			static float pullTime = 0;
+			float nextTime = pullTime + advTime;
+
+			const float speed = 0.25f;
+			const float end = 6.f;
+			float x = -speed * glm::clamp(pullTime - 2.f, 0.f, end);
+			float nextX = -speed * glm::clamp(nextTime - 2.f, 0.f, end);
+
+			for (size_t i = 0; i < sim->meta.numVerts; i++) {
+				auto& vert = sim->verts[i];
+				auto& init = initialVerts[i];
+				if (vert.invMass == 0) {
+					float pos = init.pos.y + ((vert.pos.y < center.y) ? x : -x);
+					float nextPos = init.pos.y + ((vert.pos.y < center.y) ? nextX : -nextX);
+
+					vert.pos.y = pos;
+					vert.vel.y = (nextPos - pos) / advTime;
+				}
+			}
+
+			if (pullTime > end + 4.f) {
+				exportSim = false;
+				scenarioPull = false;
+				simulate = false;
+			}
+
+			sim->upload();
+			pullTime = nextTime;
+		}
+
+		if (scenarioGrav) {
+			sim->download();
+			static float gravTime = 0;
+			const float end = 10.f;
+			sim->meta.gravity = vec3(0, -9.8 * mix(1.f, 25.f, glm::clamp(gravTime - 2, 0.f, end) / end), 0);
+
+			if (gravTime > end + 4.f) {
+				exportSim = false;
+				scenarioGrav = false;
+				simulate = false;
+			}
+
+			sim->upload();
+			gravTime += advTime;
 		}
 
 		Kit::StopWatch timer;
@@ -151,7 +201,9 @@ void renderGui() {
 
 	if (ImGui::TreeNode("Export")) {
 		ImGui::Checkbox("Export", &exportSim);
-		ImGui::Checkbox("Twist", &twist);
+		ImGui::Checkbox("Twist", &scenarioTwist);
+		ImGui::Checkbox("Pull", &scenarioPull);
+		ImGui::Checkbox("Grav Pull", &scenarioGrav);
 		ImGui::Separator();
 		if (ImGui::Button("Export frame"))
 			sim->exportToOBJ("./frame.obj");
@@ -199,9 +251,9 @@ void initScene() {
 			if (sim->verts[i].pos.y > initialBounds.max.y - 0.01f)
 				sim->verts[i].invMass = 0;
 
-		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
-				sim->verts[i].invMass = 0;
+		// for (size_t i = 0; i < sim->meta.numVerts; i++)
+		// 	if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
+		// 		sim->verts[i].invMass = 0;
 
 		sim->upload();
 		// sim->meta.gravity.y = -200;
