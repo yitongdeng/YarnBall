@@ -199,9 +199,9 @@ void initScene() {
 			if (sim->verts[i].pos.y > initialBounds.max.y - 0.01f)
 				sim->verts[i].invMass = 0;
 
-		// for (size_t i = 0; i < sim->meta.numVerts; i++)
-		// 	if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
-		// 		sim->verts[i].invMass = 0;
+		for (size_t i = 0; i < sim->meta.numVerts; i++)
+			if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
+				sim->verts[i].invMass = 0;
 
 		sim->upload();
 		// sim->meta.gravity.y = -200;

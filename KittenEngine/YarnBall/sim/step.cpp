@@ -26,7 +26,7 @@ namespace YarnBall {
 
 			if (stepGraph) cudaGraphExecDestroy(stepGraph);
 			cudaGraphInstantiate(&stepGraph, graph, NULL, NULL, 0);
-			cudaGraphDestroy(graph); 
+			cudaGraphDestroy(graph);
 		}
 
 		checkCudaErrors(cudaGetLastError());
@@ -45,6 +45,7 @@ namespace YarnBall {
 		uploadMeta();
 
 		for (int s = 0; s < steps; s++, stepCounter++) {
+			transferSegmentData();
 			if (meta.detectionPeriod > 0 && stepCounter % meta.detectionPeriod == 0)
 				detectCollisions();
 			cudaGraphLaunch(stepGraph, stream);

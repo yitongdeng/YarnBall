@@ -62,12 +62,6 @@ namespace YarnBall {
 	} Vertex;
 
 	typedef struct {
-		vec3 normal;		// Normal of the collision
-		int oid;			// Indices of the other segment
-		vec2 uv;			// UV coordinates of the collision. uv.x is the current segment. uv.y is the other segment
-	} Collision;
-
-	typedef struct {
 		vec3 position;
 		int c0;
 		vec3 delta;
@@ -82,7 +76,7 @@ namespace YarnBall {
 
 		int* d_numCols;					// Number of collisions for each segment
 		float* d_maxStepSize;			// Max step size for each vertex
-		Collision* d_collisions;		// Collisions
+		int* d_collisions;		// Collisions
 		Kit::LBVH::aabb* d_bounds;		// AABBs
 		ivec2* d_boundColList;			// Colliding AABBs
 

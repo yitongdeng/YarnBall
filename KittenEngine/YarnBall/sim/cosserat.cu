@@ -84,14 +84,28 @@ namespace YarnBall {
 			// Collision energy of this segment
 			const int numCols = data->d_numCols[tid];
 			for (int i = 0; i < numCols; i++) {
-				Collision col = collisions[tid + i * numVerts];
+				int colID = collisions[tid + i * numVerts];
 
-				// Compute contact points
-				vec3 dpos = mix(v0.pos, p1, col.uv.x) - mix(verts[col.oid].pos, verts[col.oid + 1].pos, col.uv.y);
-				vec3 ddpos = mix(dx, p1dx, col.uv.x) - mix(dxs[col.oid], dxs[col.oid + 1], col.uv.y);
+				vec3 b0 = verts[colID].pos;
+				vec3 b1 = verts[colID + 1].pos;
+				vec3 db0 = dxs[colID];
+				vec3 db1 = dxs[colID + 1];
+
+				// Compute collision UV and normal
+				vec2 uv = Kit::segmentClosestPoints(
+					vec3(0), (p1 - v0.pos) + (p1dx - dx),
+					(b0 - v0.pos) + (db0 - dx), (b1 - v0.pos) + (db1 - dx));
+				if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
+					uv = vec2(0.5);
+
+				vec3 dpos = mix(v0.pos, p1, uv.x) - mix(b0, b1, uv.y);
+				vec3 ddpos = mix(dx, p1dx, uv.x) - mix(db0, db1, uv.y);
+				vec3 normal = dpos + ddpos;
+				float d = length(normal);
+				normal /= d;
 
 				// Compute penetration
-				float d = dot(col.normal, dpos + ddpos) - radius;
+				d = d - radius;
 				d *= invb;
 				if (d > 1) continue;	// Not touching
 				d = max(d, 1e-4f);		// Clamp to some small value. This is a ratio of the barrier thickness.
@@ -102,16 +116,16 @@ namespace YarnBall {
 
 				float dH = (-3 + (2 + invd) * invd - 2 * logd) * kCol * invb;
 				float ff = -(1 - d) * (d - 1 + 2 * d * logd) * invd * kCol;
-				f += (ff * (1 - col.uv.x) - damping * dH * Kit::pow2(1 - col.uv.x) * dot(col.normal, dx)) * col.normal;
-				f2 += (ff * col.uv.x - damping * dH * Kit::pow2(col.uv.x) * dot(col.normal, p1dx)) * col.normal;
+				f += (ff * (1 - uv.x) - damping * dH * Kit::pow2(1 - uv.x) * dot(normal, dx)) * normal;
+				f2 += (ff * uv.x - damping * dH * Kit::pow2(uv.x) * dot(normal, p1dx)) * normal;
 
 				dH *= 1 + damping;
-				hess3 op = hess3::outer(col.normal);
-				H += op * (dH * Kit::pow2(1 - col.uv.x));
-				H2 += op * (dH * Kit::pow2(col.uv.x));
+				hess3 op = hess3::outer(normal);
+				H += op * (dH * Kit::pow2(1 - uv.x));
+				H2 += op * (dH * Kit::pow2(uv.x));
 
 				// Friction
-				vec3 u = ddpos - dot(col.normal, ddpos) * col.normal;
+				vec3 u = ddpos - dot(normal, ddpos) * normal;
 				float ul = length(u);
 				if (ul > 0) {
 					float f1 = 1;
@@ -124,11 +138,11 @@ namespace YarnBall {
 
 					op.diag -= 1;
 
-					f -= f1 * (1 - col.uv.x) * u;
-					H -= op * (Kit::pow2(1 - col.uv.x) * f1);
+					f -= f1 * (1 - uv.x) * u;
+					H -= op * (Kit::pow2(1 - uv.x) * f1);
 
-					f2 -= f1 * col.uv.x * u;
-					H2 -= op * (Kit::pow2(col.uv.x) * f1);
+					f2 -= f1 * uv.x * u;
+					H2 -= op * (Kit::pow2(uv.x) * f1);
 				}
 			}
 		}

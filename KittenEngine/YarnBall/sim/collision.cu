@@ -36,61 +36,48 @@ namespace YarnBall {
 
 		auto segs = data->d_lastSegments;
 		auto s0 = segs[ids.x];
-		auto s1 = segs[ids.y];
-
-		float r2 = 2 * data->scaledDetectionRadius;
-		r2 *= r2;
-		float mr2 = 2 * data->radius;
-		mr2 *= mr2;
 
 		auto nCols = data->d_numCols;
-		const auto collisions = data->d_collisions;
 
 		// Exempt self-collisions due to glueing
 		if (s0.c0 == ids.y || s0.c1 == ids.y || s0.c0 == ids.y + 1 || s0.c1 == ids.y + 1) return;
 		// Exempt neighboring segments
 		if (abs(ids.y - ids.x) <= 2) return;
 
+		auto s1 = segs[ids.y];
 		// Discrete collision detection
 		vec3 diff = s1.position - s0.position;
 
-		Collision col;
-		col.uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
-		if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
-			col.uv = vec2(0.5);
+		vec2 uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
+		if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
+			uv = vec2(0.5);
 
 		// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
-		col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
-		float d2 = Kit::length2(col.normal);
+		vec3 normal = uv.x * s0.delta - (diff + uv.y * s1.delta);
+		float d = Kit::length(normal);
 
-		if (d2 < r2) {
-			if (d2 < mr2) // Report interpenetration
+		float r = 2 * data->scaledDetectionRadius;
+		float mr = 2 * data->radius;
+		if (d < r) {
+			if (d < mr) // Report interpenetration
 				errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
-			col.normal *= inversesqrt(d2);
 
+			const auto collisions = data->d_collisions;
 			int numCols = atomicAdd(&nCols[ids.x], 1);
 			if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
 				errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
-			else {
-				col.oid = ids.y;
-				collisions[ids.x + numVerts * numCols] = col;
-			}
+			else
+				collisions[ids.x + numVerts * numCols] = ids.y;
 
 			numCols = atomicAdd(&nCols[ids.y], 1);
 			if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
 				errorReturn[0] = Sim::ERROR_MAX_COLLISIONS_PER_SEGMENT_EXCEEDED;
-			else {
-				col.oid = ids.x;
-				col.normal *= -1;
-				thrust::swap(col.uv.x, col.uv.y);
-				collisions[ids.y + numVerts * numCols] = col;
-			}
+			else
+				collisions[ids.y + numVerts * numCols] = ids.x;
 		}
 	}
 
 	void Sim::detectCollisions() {
-		transferSegmentData();
-
 		// Rebuild bvh
 		buildAABBs << <(meta.numVerts + 255) / 256, 256 >> > (d_meta, d_error);
 		if (lastBVHRebuild >= meta.bvhRebuildPeriod) {
@@ -121,11 +108,9 @@ namespace YarnBall {
 		constexpr float SAFETY_MARGIN = 0.2f;
 
 		// Linear change
-		vec3 p0 = verts[tid].pos;
-		vec3 p0dx = dxs[tid];
-		vec3 p1 = verts[tid + 1].pos;
-		vec3 p1dx = dxs[tid + 1];
-		Segment s0 = { p0 + p0dx, -1, (p1 - p0) + (p1dx - p0dx) };
+		auto segs = data->d_lastSegments;
+		auto s0 = segs[tid];
+
 		// This is the maximum distance possible within with the AABB query is guaranteed to find a collision
 		float minDist = data->detectionRadius * (data->detectionScaler - 1);
 
@@ -133,27 +118,19 @@ namespace YarnBall {
 		const int numCols = data->d_numCols[tid];
 		const auto collisions = data->d_collisions + tid;
 		for (int i = 0; i < numCols; i++) {
-			Collision col = collisions[i * numVerts];
-
-			vec3 op0 = verts[col.oid].pos;
-			vec3 op0dx = dxs[col.oid];
-			vec3 op1 = verts[col.oid + 1].pos;
-			vec3 op1dx = dxs[col.oid + 1];
-			Segment s1 = { op0 + op0dx, -1, (op1 - op0) + (op1dx - op0dx) };
+			int oid = collisions[i * numVerts];
+			Segment s1 = segs[oid];
 
 			// Recompute contact data
 			vec3 diff = s1.position - s0.position;
-			col.uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
-			if (!glm::isfinite(col.uv.x) || !glm::isfinite(col.uv.y))
-				col.uv = vec2(0.5);
+			vec2 uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
+			if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
+				uv = vec2(0.5);
 
 			// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
-			col.normal = col.uv.x * s0.delta - (diff + col.uv.y * s1.delta);
-			float l = length(col.normal);
+			vec3 normal = uv.x * s0.delta - (diff + uv.y * s1.delta);
+			float l = length(normal);
 			minDist = min(minDist, ((1 - SAFETY_MARGIN) * 0.5f) * l);
-			col.normal *= 1 / l;
-
-			collisions[i * numVerts] = col;
 		}
 		data->d_maxStepSize[tid] = minDist;
 	}
