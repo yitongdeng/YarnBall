@@ -23,10 +23,6 @@ namespace YarnBall {
 		data->d_bounds[tid] = aabb;
 	}
 
-	__device__ inline bool ignoreSeg(int i, int s) {
-		return i - 2 <= s && s < i + 2;
-	}
-
 	__global__ void buildCollisionList(MetaData* data, int maxCols, int* errorReturn) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		const int numVerts = data->numVerts;
