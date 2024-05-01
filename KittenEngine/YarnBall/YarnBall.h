@@ -7,6 +7,7 @@
 
 #include "KittenEngine/includes/KittenEngine.h"
 #include "KittenEngine/KittenGpuLBVH/lbvh.cuh"
+#include "KittenEngine/includes/modules/Bound.h"
 
 namespace YarnBall {
 	using namespace glm;
@@ -121,8 +122,9 @@ namespace YarnBall {
 
 		Vertex* verts;
 		MetaData meta;
-		float maxH = 1e-3;					// Largest time step allowed
-		std::vector<float> initialInvMasses;		// Starting inverse masses saved for pinned vertices.
+		float maxH = 1e-3;						// Largest time step allowed
+		std::vector<float> initialInvMasses;	// Starting inverse masses saved for pinned vertices.
+		Kit::Bound<> currentBounds;				// Current bounding box
 
 		int lastErrorCode = ERROR_NONE;
 		int lastWarningCode = ERROR_NONE;

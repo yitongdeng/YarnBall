@@ -85,6 +85,7 @@ namespace YarnBall {
 			bvh.refit();
 			lastBVHRebuild += meta.h * meta.detectionPeriod;
 		}
+		currentBounds = bvh.bounds();
 
 		int numCols = bvh.query(meta.d_boundColList, meta.numVerts * MAX_COLLISIONS_PER_SEGMENT);
 

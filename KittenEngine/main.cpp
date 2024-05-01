@@ -17,15 +17,17 @@ YarnBall::Sim* sim = nullptr;
 bool simulate = false;
 float timeScale = 1.;
 float measuredSimSpeed = 1;
+Kit::Dist simSpeedDist;
 
 const float EXPORT_DT = 1 / 30.f;
+
 bool exportSim = false;
 bool scenarioTwist = false;
 bool scenarioPull = false;
 bool scenarioGrav = false;
+
 vector<vec3> initialPos;
 Kit::Bound<> initialBounds;
-Kit::Dist simSpeedDist;
 
 vec3 rotateY(vec3 v, float angle) {
 	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
@@ -239,8 +241,11 @@ void initScene() {
 
 		// Copy initial state for animation.
 		initialPos.resize(sim->meta.numVerts);
-		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			initialPos[i] = sim->verts[i].pos;
+		for (size_t i = 0; i < sim->meta.numVerts; i++) {
+			auto pos = sim->verts[i].pos;
+			initialPos[i] = pos;
+			initialBounds.absorb(pos);
+		}
 
 		sim->upload();
 		printf("Total verts: %d\n", sim->meta.numVerts);

@@ -19,7 +19,7 @@ namespace YarnBall {
 		) * b);
 	}
 
-	constexpr int BLOCK_SIZE = 256;
+#define BLOCK_SIZE (256)
 	__global__ void cosseratItr(MetaData* data) {
 		const int tid = (int)(blockIdx.x * (BLOCK_SIZE - 1) + threadIdx.x) - 1;
 		const int numVerts = data->numVerts;

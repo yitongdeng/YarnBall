@@ -19,6 +19,7 @@ namespace YarnBall {
 		vec3 dx = h * vel;
 		vec3 lastVel = lastVels[tid];
 		lastVels[tid] = vel;
+		float stepLimit = INFINITY;
 
 		if (verts[tid].invMass != 0) {
 			// Compute y (inertial + accel position)
@@ -32,6 +33,16 @@ namespace YarnBall {
 				float s = clamp(dot(a, g) / g2, 0.f, 1.f);
 				dx += (h * h * s) * g;
 			}
+
+			// Clamp to step limit
+			auto lims = data->d_maxStepSize;
+			int flag = verts[tid].flags;
+			if (flag & (uint32_t)YarnBall::VertexFlags::hasNext)
+				stepLimit = lims[tid];
+			if (flag & (uint32_t)YarnBall::VertexFlags::hasPrev)
+				stepLimit = glm::min(lims[tid - 1], stepLimit);
+			float l = length(dx);
+			if (l > stepLimit && l > 0) dx *= stepLimit / l;
 		}
 
 		data->d_dx[tid] = dx;
