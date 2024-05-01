@@ -72,8 +72,8 @@ namespace YarnBall {
 		sim->setKStretch(kStretch);
 		sim->setKBend(kBend);
 
-		if (!root["glueEndpoint"].isNull()) {
-			float radius = root["glueEndpoint"].asFloat();
+		if (!root["glueEndpoints"].isNull()) {
+			float radius = root["glueEndpoints"].asFloat();
 			if (radius >= 0)
 				sim->glueEndpoints(radius);
 		}
