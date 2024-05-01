@@ -72,13 +72,13 @@ namespace YarnBall {
 		Vertex* d_verts;		// Device vertex array pointer
 		vec3* d_dx;				// Temporary delta position iterants. Stored as deltas for precision.
 		vec3* d_lastVels;		// Velocity from the last frame
-		Segment* d_lastSegments;// Last segment positions
+		Segment* d_lastSegments;// Last segment positions. Temp storage to speed up memory access.
 
 		int* d_numCols;					// Number of collisions for each segment
 		float* d_maxStepSize;			// Max step size for each vertex
-		int* d_collisions;		// Collisions
+		int* d_collisions;				// Collisions IDs stored as the other segment index.
 		Kit::LBVH::aabb* d_bounds;		// AABBs
-		ivec2* d_boundColList;			// Colliding AABBs
+		ivec2* d_boundColList;			// Colliding segment AABB IDs. 
 
 		vec3 gravity;			// Gravity
 		int numItr;				// Number of iterations used per time step
@@ -121,11 +121,13 @@ namespace YarnBall {
 
 		Vertex* verts;
 		MetaData meta;
-		float maxH = 1e-3;		// Largest time step allowed
+		float maxH = 1e-3;					// Largest time step allowed
+		std::vector<float> initialInvMasses;		// Starting inverse masses saved for pinned vertices.
+
 		int lastErrorCode = ERROR_NONE;
 		int lastWarningCode = ERROR_NONE;
-		bool printErrors = true;
 
+		bool printErrors = true;
 		bool renderShaded = false;
 
 	private:
@@ -175,6 +177,7 @@ namespace YarnBall {
 		void exportToBCC(std::string path);
 		void exportToOBJ(std::string path);
 
+		// Glue endpoints with a vertex within the search radius
 		void glueEndpoints(float searchRadius);
 
 	private:

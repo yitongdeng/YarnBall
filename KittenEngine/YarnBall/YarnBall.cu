@@ -74,6 +74,7 @@ namespace YarnBall {
 
 		meta.maxSegLen = 0;
 		meta.minSegLen = FLT_MAX;
+		initialInvMasses.resize(numVerts);
 
 		// Init mass and orientation
 		for (int i = 0; i < numVerts; i++) {
@@ -122,6 +123,7 @@ namespace YarnBall {
 				v.invMass *= 1 / mass;
 			else
 				v.invMass = 0;
+			initialInvMasses[i] = v.invMass;
 		}
 
 		// Init rest orientation

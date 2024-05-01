@@ -23,11 +23,9 @@ bool exportSim = false;
 bool scenarioTwist = false;
 bool scenarioPull = false;
 bool scenarioGrav = false;
-vector<YarnBall::Vertex> initialVerts;
+vector<vec3> initialPos;
 Kit::Bound<> initialBounds;
 Kit::Dist simSpeedDist;
-
-constexpr bool fixBottom = true;
 
 vec3 rotateY(vec3 v, float angle) {
 	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
@@ -55,15 +53,15 @@ void renderScene() {
 
 			for (size_t i = 0; i < sim->meta.numVerts; i++) {
 				auto& vert = sim->verts[i];
-				auto& init = initialVerts[i];
+				auto init = initialPos[i];
 				if (vert.pos.y < center.y && vert.invMass == 0) {
-					vec3 pos = center + rotateY(init.pos - center, angle);
-					vec3 nextPos = center + rotateY(init.pos - center, nextAngle);
+					vec3 pos = center + rotateY(init - center, angle);
+					vec3 nextPos = center + rotateY(init - center, nextAngle);
 
 					vert.pos = pos;
 					vert.vel = (nextPos - pos) / advTime;
 
-					if (twistTime > end + 3.0f) vert.invMass = init.invMass;
+					if (twistTime > end + 3.0f) vert.invMass = sim->initialInvMasses[i];
 				}
 			}
 
@@ -72,8 +70,6 @@ void renderScene() {
 				scenarioTwist = false;
 				simulate = false;
 			}
-
-			// sim->meta.gravity = vec3(0);
 
 			sim->upload();
 			twistTime = nextTime;
@@ -92,10 +88,10 @@ void renderScene() {
 
 			for (size_t i = 0; i < sim->meta.numVerts; i++) {
 				auto& vert = sim->verts[i];
-				auto& init = initialVerts[i];
+				auto init = initialPos[i];
 				if (vert.invMass == 0) {
-					float pos = init.pos.y + ((vert.pos.y < center.y) ? x : -x);
-					float nextPos = init.pos.y + ((vert.pos.y < center.y) ? nextX : -nextX);
+					float pos = init.y + ((vert.pos.y < center.y) ? x : -x);
+					float nextPos = init.y + ((vert.pos.y < center.y) ? nextX : -nextX);
 
 					vert.pos.y = pos;
 					vert.vel.y = (nextPos - pos) / advTime;
@@ -177,8 +173,10 @@ void renderGui() {
 		ImGui::DragFloat3("Gravity", (float*)&sim->meta.gravity);
 		ImGui::Separator();
 
-		if (ImGui::Button("Print Cols"))
+		if (ImGui::Button("Print cols"))
 			sim->printCollisionStats();
+		if (ImGui::Button("Zero velocity"))
+			sim->zeroVelocities();
 
 		ImGui::Separator();
 		ImGui::TreePop();
@@ -239,27 +237,12 @@ void initScene() {
 			exit(-1);
 		}
 
-		// Copy initial state
-		initialVerts.resize(sim->meta.numVerts);
+		// Copy initial state for animation.
+		initialPos.resize(sim->meta.numVerts);
 		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			initialVerts[i] = sim->verts[i];
-
-		// Just pin the top cm of the thing
-		initialBounds = Kit::Bound<>();
-		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			initialBounds.absorb(sim->verts[i].pos);
-
-		for (size_t i = 0; i < sim->meta.numVerts; i++)
-			if (sim->verts[i].pos.y > initialBounds.max.y - 0.01f)
-				sim->verts[i].invMass = 0;
-
-		if (fixBottom)
-			for (size_t i = 0; i < sim->meta.numVerts; i++)
-				if (sim->verts[i].pos.y < initialBounds.min.y + 0.01f)
-					sim->verts[i].invMass = 0;
+			initialPos[i] = sim->verts[i].pos;
 
 		sim->upload();
-		// sim->meta.gravity.y = -200;
 		printf("Total verts: %d\n", sim->meta.numVerts);
 		sim->printErrors = false;
 		sim->renderShaded = true;
