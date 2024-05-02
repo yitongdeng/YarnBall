@@ -51,7 +51,9 @@ namespace YarnBall {
 		if (d_meta) {
 			cudaFree(meta.d_dx);
 			cudaFree(meta.d_lastVels);
-			cudaFree(meta.d_lastSegments);
+			cudaFree(meta.d_lastPos);
+			cudaFree(meta.d_lastFlags);
+			cudaFree(meta.d_lastCID);
 			cudaFree(meta.d_numCols);
 			cudaFree(meta.d_maxStepSize);
 			cudaFree(meta.d_collisions);
@@ -147,7 +149,9 @@ namespace YarnBall {
 
 		cudaMalloc(&meta.d_lastVels, sizeof(vec3) * numVerts);
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
-		cudaMalloc(&meta.d_lastSegments, sizeof(Segment) * numVerts);
+		cudaMalloc(&meta.d_lastPos, sizeof(vec3) * numVerts);
+		cudaMalloc(&meta.d_lastCID, sizeof(int) * numVerts);
+		cudaMalloc(&meta.d_lastFlags, sizeof(int) * numVerts);
 
 		cudaMalloc(&meta.d_maxStepSize, sizeof(float) * numVerts);
 		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
@@ -203,8 +207,17 @@ namespace YarnBall {
 		cudaMemcpyAsync(d_meta, &meta, sizeof(MetaData), cudaMemcpyHostToDevice, stream);
 	}
 
+	__global__ void copyTempData(Vertex* verts, uint32_t* lastFlags, int* lastCID, int numVerts) {
+		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+		if (tid >= numVerts) return;
+		auto v = verts[tid];
+		lastFlags[tid] = v.flags;
+		lastCID[tid] = v.connectionIndex;
+	}
+
 	void Sim::upload() {
 		cudaMemcpyAsync(meta.d_verts, verts, sizeof(Vertex) * meta.numVerts, cudaMemcpyHostToDevice, stream);
+		copyTempData << <(meta.numVerts + 511) / 512, 512, 0, stream >> > (meta.d_verts, meta.d_lastFlags, meta.d_lastCID, meta.numVerts);
 		cudaStreamSynchronize(stream);
 	}
 

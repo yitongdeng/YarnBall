@@ -83,11 +83,12 @@ namespace YarnBall {
 
 			// Collision energy of this segment
 			const int numCols = data->d_numCols[tid];
+			const auto lastPos = data->d_lastPos;
 			for (int i = 0; i < numCols; i++) {
 				int colID = collisions[tid + i * numVerts];
 
-				vec3 b0 = verts[colID].pos;
-				vec3 b1 = verts[colID + 1].pos;
+				vec3 b0 = lastPos[colID];
+				vec3 b1 = lastPos[colID + 1];
 				vec3 db0 = dxs[colID];
 				vec3 db1 = dxs[colID + 1];
 

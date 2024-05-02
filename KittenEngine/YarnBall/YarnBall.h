@@ -63,17 +63,13 @@ namespace YarnBall {
 	} Vertex;
 
 	typedef struct {
-		vec3 position;
-		int c0;
-		vec3 delta;
-		int c1;
-	} Segment;
-
-	typedef struct {
 		Vertex* d_verts;		// Device vertex array pointer
 		vec3* d_dx;				// Temporary delta position iterants. Stored as deltas for precision.
 		vec3* d_lastVels;		// Velocity from the last frame
-		Segment* d_lastSegments;// Last segment positions. Temp storage to speed up memory access.
+
+		vec3* d_lastPos;		// Last vertex positions. Temp storage to speed up memory access.
+		uint32_t* d_lastFlags;	// Last vertex flags. Temp storage to speed up memory access.
+		int* d_lastCID;			// Last cid. Temp storage to speed up memory access.
 
 		int* d_numCols;					// Number of collisions for each segment
 		float* d_maxStepSize;			// Max step size for each vertex

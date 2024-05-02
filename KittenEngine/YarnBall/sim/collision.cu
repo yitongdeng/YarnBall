@@ -11,13 +11,15 @@ namespace YarnBall {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		if (tid >= data->numVerts) return;
 
-		auto seg = data->d_lastSegments[tid];
+		auto verts = data->d_lastPos;
+		auto flags = data->d_lastFlags[tid];
 		Kit::LBVH::aabb aabb;
 
-		if (glm::all(glm::isfinite(seg.position)) &&
-			glm::all(glm::isfinite(seg.delta))) {
-			aabb.absorb(seg.position);
-			aabb.absorb(seg.position + seg.delta);
+		if (flags & (uint32_t)VertexFlags::hasNext) {
+			auto p0 = verts[tid];
+			auto p1 = verts[tid + 1];
+			aabb.absorb(p0);
+			aabb.absorb(p1);
 			aabb.pad(data->scaledDetectionRadius);
 		}
 
@@ -31,26 +33,29 @@ namespace YarnBall {
 
 		ivec2 ids = data->d_boundColList[tid];
 
-		auto segs = data->d_lastSegments;
-		auto s0 = segs[ids.x];
-
-		auto nCols = data->d_numCols;
+		auto cids = data->d_lastCID;
+		int c0 = cids[ids.x];
+		int c1 = cids[ids.x + 1];
 
 		// Exempt self-collisions due to glueing
-		if (s0.c0 == ids.y || s0.c1 == ids.y || s0.c0 == ids.y + 1 || s0.c1 == ids.y + 1) return;
+		if (c0 == ids.y || c1 == ids.y || c0 == ids.y + 1 || c1 == ids.y + 1) return;
 		// Exempt neighboring segments
 		if (abs(ids.y - ids.x) <= 2) return;
 
-		auto s1 = segs[ids.y];
-		// Discrete collision detection
-		vec3 diff = s1.position - s0.position;
+		auto verts = data->d_lastPos;
+		vec3 a0 = verts[ids.x];
+		vec3 a1 = verts[ids.x + 1] - a0;
+		vec3 b0 = verts[ids.y] - a0;
+		vec3 b1 = verts[ids.y + 1] - a0;
 
-		vec2 uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
+		// Discrete collision detection
+
+		vec2 uv = Kit::segmentClosestPoints(vec3(0), a1, b0, b1);
 		if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
 			uv = vec2(0.5);
 
 		// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
-		vec3 normal = uv.x * s0.delta - (diff + uv.y * s1.delta);
+		vec3 normal = uv.x * a1 - mix(b0, b1, uv.y);
 		float d2 = Kit::length2(normal);
 
 		float r = 2 * data->scaledDetectionRadius;
@@ -59,6 +64,7 @@ namespace YarnBall {
 			if (d2 < mr * mr) // Report interpenetration
 				errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
 
+			auto nCols = data->d_numCols;
 			const auto collisions = data->d_collisions;
 			int numCols = atomicAdd(&nCols[ids.x], 1);
 			if (numCols >= MAX_COLLISIONS_PER_SEGMENT)
@@ -100,41 +106,38 @@ namespace YarnBall {
 		const int numVerts = data->numVerts;
 		if (tid >= numVerts) return;
 
-		if (LIMIT) {
-			const auto verts = data->d_verts;
-			const auto dxs = data->d_dx;
-			if (!(bool)(verts[tid].flags & (uint32_t)VertexFlags::hasNext)) return;
-
+		float minDist = INFINITY;
+		if (LIMIT && (bool)(data->d_lastFlags[tid] & (uint32_t)VertexFlags::hasNext)) {
 			constexpr float SAFETY_MARGIN = 0.2f;
 
 			// Linear change
-			auto segs = data->d_lastSegments;
-			auto s0 = segs[tid];
+			const auto verts = data->d_lastPos;
+			vec3 a0 = verts[tid];
+			vec3 a1 = verts[tid + 1] - a0;
 
 			// This is the maximum distance possible within with the AABB query is guaranteed to find a collision
-			float minDist = data->detectionRadius * (data->detectionScaler - 1);
+			minDist = data->detectionRadius * (data->detectionScaler - 1);
 
 			// Collision energy of this segment
 			const int numCols = data->d_numCols[tid];
 			const auto collisions = data->d_collisions + tid;
 			for (int i = 0; i < numCols; i++) {
 				int oid = collisions[i * numVerts];
-				Segment s1 = segs[oid];
+				vec3 b0 = verts[oid] - a0;
+				vec3 b1 = verts[oid + 1] - a0;
 
 				// Recompute contact data
-				vec3 diff = s1.position - s0.position;
-				vec2 uv = Kit::segmentClosestPoints(vec3(0), s0.delta, diff, diff + s1.delta);
+				vec2 uv = Kit::segmentClosestPoints(vec3(0), a1, b0, b1);
 				if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
 					uv = vec2(0.5);
 
-				// Remove depulicate collisions if there is a previous segment and the collision happens on the lower corner
-				vec3 normal = uv.x * s0.delta - (diff + uv.y * s1.delta);
+				// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
+				vec3 normal = uv.x * a1 - mix(b0, b1, uv.y);
 				float l = length(normal);
 				minDist = min(minDist, ((1 - SAFETY_MARGIN) * 0.5f) * l);
 			}
-			data->d_maxStepSize[tid] = minDist;
 		}
-		else data->d_maxStepSize[tid] = INFINITY;
+		data->d_maxStepSize[tid] = minDist;
 	}
 
 	void Sim::recomputeStepLimit() {
@@ -144,23 +147,13 @@ namespace YarnBall {
 			recomputeStepLimitKernel<false> << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
 	}
 
-	__global__ void transferSegmentDataKernel(Vertex* verts, vec3* dxs, Segment* segment, int numVerts) {
+	__global__ void transferSegmentDataKernel(MetaData* data) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-		if (tid >= numVerts) return;
-
-		vec3 pos(NAN);
-		vec3 delta(0);
-		ivec2 cid(-1);
-		int flags = verts[tid].flags;
-		if (flags & (uint32_t)VertexFlags::hasNext) {
-			pos = verts[tid].pos;
-			delta = verts[tid + 1].pos - pos;
-			cid = ivec2(verts[tid].connectionIndex, verts[tid + 1].connectionIndex);
-		}
-		segment[tid] = { pos, cid.x, delta, cid.y };
+		if (tid >= data->numVerts) return;
+		data->d_lastPos[tid] = data->d_verts[tid].pos;
 	}
 
 	void Sim::transferSegmentData() {
-		transferSegmentDataKernel << <(meta.numVerts + 127) / 128, 128 >> > (meta.d_verts, meta.d_dx, meta.d_lastSegments, meta.numVerts);
+		transferSegmentDataKernel << <(meta.numVerts + 127) / 128, 128 >> > (d_meta);
 	}
 }
