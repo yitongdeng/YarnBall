@@ -105,6 +105,9 @@ namespace YarnBall {
 				float d = length(normal);
 				normal /= d;
 
+				uv.y = uv.x;
+				uv.x = 1 - uv.x;
+
 				// Compute penetration
 				d = d - radius;
 				d *= invb;
@@ -117,13 +120,13 @@ namespace YarnBall {
 
 				float dH = (-3 + (2 + invd) * invd - 2 * logd) * kCol * invb;
 				float ff = -(1 - d) * (d - 1 + 2 * d * logd) * invd * kCol;
-				f += (ff * (1 - uv.x) - damping * dH * Kit::pow2(1 - uv.x) * dot(normal, dx)) * normal;
-				f2 += (ff * uv.x - damping * dH * Kit::pow2(uv.x) * dot(normal, p1dx)) * normal;
+				f += (ff * uv.x - damping * dH * uv.x * uv.x * dot(normal, dx)) * normal;
+				f2 += (ff * uv.y - damping * dH * uv.y * uv.y * dot(normal, p1dx)) * normal;
 
 				dH *= 1 + damping;
 				hess3 op = hess3::outer(normal);
-				H += op * (dH * Kit::pow2(1 - uv.x));
-				H2 += op * (dH * Kit::pow2(uv.x));
+				H += op * (dH * uv.x * uv.x);
+				H2 += op * (dH * uv.y * uv.y);
 
 				// Friction
 				vec3 u = ddpos - dot(normal, ddpos) * normal;
@@ -139,11 +142,11 @@ namespace YarnBall {
 
 					op.diag -= 1;
 
-					f -= f1 * (1 - uv.x) * u;
-					H -= op * (Kit::pow2(1 - uv.x) * f1);
+					f -= f1 * uv.x * uv.x * u;
+					H -= op * (Kit::pow3(uv.x) * f1);
 
-					f2 -= f1 * uv.x * u;
-					H2 -= op * (Kit::pow2(uv.x) * f1);
+					f2 -= f1 * uv.y * uv.y * u;
+					H2 -= op * (Kit::pow3(uv.y) * f1);
 				}
 			}
 		}
