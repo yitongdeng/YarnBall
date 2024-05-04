@@ -142,11 +142,11 @@ namespace YarnBall {
 
 					op.diag -= 1;
 
-					f -= f1 * uv.x * uv.x * u;
-					H -= op * (Kit::pow3(uv.x) * f1);
+					f -= f1 * uv.x * u;
+					H -= op * (Kit::pow2(uv.x) * f1);
 
-					f2 -= f1 * uv.y * uv.y * u;
-					H2 -= op * (Kit::pow3(uv.y) * f1);
+					f2 -= f1 * uv.y * u;
+					H2 -= op * (Kit::pow2(uv.y) * f1);
 				}
 			}
 		}
