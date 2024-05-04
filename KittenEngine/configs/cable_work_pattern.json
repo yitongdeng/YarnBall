@@ -8,7 +8,7 @@
 	"simulation": {
 		// Material
 		"density": 1e-3,
-		"frictionCoeff": 0.0,
+		"frictionCoeff": 0.1,
 		"kStretch": 1e-1,
 		"kBend": 2e-7,
 		"kCollision": 2e-4,

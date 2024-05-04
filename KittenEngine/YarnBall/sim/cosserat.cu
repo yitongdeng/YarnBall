@@ -74,7 +74,7 @@ namespace YarnBall {
 				H2.diag += d;
 			}
 
-			const float fricE = 1e-3f * h;	// Friction epsilon dx theshold for static vs kinetic friction
+			const float fricE = 1.0f * h;	// Friction epsilon dx theshold for static vs kinetic friction
 			const float invb = 1 / data->barrierThickness;
 			const float radius = 2 * data->radius;
 			const float fricMu = data->frictionCoeff;
