@@ -44,6 +44,8 @@ namespace YarnBall {
 				kBend = simRoot["kBend"].asFloat();
 			if (!simRoot["kCollision"].isNull())
 				sim->meta.kCollision = simRoot["kCollision"].asFloat();
+			if (!simRoot["kFriction"].isNull())
+				sim->meta.kFriction = simRoot["kFriction"].asFloat();
 			if (!simRoot["damping"].isNull())
 				sim->meta.damping = simRoot["damping"].asFloat();
 

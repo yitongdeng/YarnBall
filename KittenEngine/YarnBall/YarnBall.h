@@ -92,6 +92,7 @@ namespace YarnBall {
 		float drag;				// Velocity decay
 		float frictionCoeff;	// Friction coefficient for contacts
 		float kCollision;		// Stiffness of the collision
+		float kFriction;		// Stiffness of the collision
 
 		float detectionRadius;			// Total detection radius of the yarn (automatically set)
 		float scaledDetectionRadius;	// Detection radius scaled by the detectionScaler

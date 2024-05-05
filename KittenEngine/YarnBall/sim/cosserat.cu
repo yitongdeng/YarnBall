@@ -74,7 +74,7 @@ namespace YarnBall {
 				H2.diag += d;
 			}
 
-			const float fricE = 1.e-3f * h;	// Friction epsilon dx theshold for static vs kinetic friction
+			const float fricK = data->kFriction;
 			const float invb = 1 / data->barrierThickness;
 			const float radius = 2 * data->radius;
 			const float fricMu = data->frictionCoeff;
@@ -132,13 +132,7 @@ namespace YarnBall {
 				vec3 u = ddpos - dot(normal, ddpos) * normal;
 				float ul = length(u);
 				if (ul > 0) {
-					float f1 = 1;
-					if (ul < fricE) {
-						f1 = ul / fricE;
-						f1 = 2 * f1 - Kit::pow2(f1);
-					}
-
-					f1 *= fricMu * ff / ul;
+					float f1 = glm::min(fricK, fricMu * ff / ul);
 
 					op.diag -= 1;
 
