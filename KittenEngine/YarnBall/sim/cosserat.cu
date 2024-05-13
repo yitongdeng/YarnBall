@@ -173,10 +173,26 @@ namespace YarnBall {
 			// Apply update
 			dxs[tid] = dx;
 		}
+	}
+
+	__global__ void quaternionItr(MetaData* data) {
+		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
+		const int numVerts = data->numVerts;
+		if (tid >= numVerts || tid < 0) return;
+
+		const auto verts = data->d_verts;
+		const auto dxs = data->d_dx;
+
+		// Linear change
+		Vertex v0 = verts[tid];
 
 		// Update segment orientation
 		// This is done assuming some very very large invMoment (i.e. no inertia so static equilibrium)
 		if (!(bool)(v0.flags & (uint32_t)VertexFlags::fixOrientation) != 0 && (v0.flags & (uint32_t)VertexFlags::hasNext)) {
+			vec3 dx = dxs[tid];
+			vec3 p1 = verts[tid + 1].pos;
+			vec3 p1dx = dxs[tid + 1];
+
 			// All this is from an alternate derivation from forced-base hair interpolation.
 			v0.pos = ((p1 - v0.pos) + (p1dx - dx)) / v0.lRest;
 			v0.pos *= -2 * v0.kStretch;
@@ -202,5 +218,6 @@ namespace YarnBall {
 
 	void Sim::iterateCosserat() {
 		cosseratItr << <(meta.numVerts + BLOCK_SIZE - 2) / (BLOCK_SIZE - 1), BLOCK_SIZE, 0, stream >> > (d_meta);
+		quaternionItr << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
 	}
 }
