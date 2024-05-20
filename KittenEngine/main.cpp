@@ -61,7 +61,7 @@ void renderScene() {
 					vec3 nextPos = center + rotateY(init - center, nextAngle);
 
 					vert.pos = pos;
-					vert.vel = (nextPos - pos) / advTime;
+					sim->vels[i] = (nextPos - pos) / advTime;
 
 					if (twistTime > end + 3.0f) vert.invMass = sim->initialInvMasses[i];
 				}
@@ -96,7 +96,7 @@ void renderScene() {
 					float nextPos = init.y + ((vert.pos.y < center.y) ? nextX : -nextX);
 
 					vert.pos.y = pos;
-					vert.vel.y = (nextPos - pos) / advTime;
+					sim->vels[i].y = (nextPos - pos) / advTime;
 				}
 			}
 

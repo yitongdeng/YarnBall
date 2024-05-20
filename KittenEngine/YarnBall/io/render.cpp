@@ -10,6 +10,7 @@ namespace YarnBall {
 		static auto shadedForward = Kit::get<Kit::Shader>("resources\\shaders\\yarnForward.glsl");
 
 		vertBuffer->bind(5);
+		qBuffer->bind(6);
 
 		auto base = renderShaded ? shadedBase : segBase;
 		auto forward = renderShaded ? shadedForward : segForward;

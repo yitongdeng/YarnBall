@@ -20,7 +20,7 @@ namespace YarnBall {
 
 		// Hessian H
 		mat3 H = mat3(1 / (invMass * h * h));
-		vec3 f = 1 / (h * h * invMass) * (verts[tid].vel - dx);
+		vec3 f = 1 / (h * h * invMass) * (data->d_vels[tid] - dx);
 
 		// Simple springs
 		float k = 1e4;

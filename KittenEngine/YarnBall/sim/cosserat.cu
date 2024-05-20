@@ -37,7 +37,7 @@ namespace YarnBall {
 		hess3 H = hess3(1 / (v0.invMass * h * h));
 		// vel has been overwritten to contain y - pos
 		vec3 dx = dxs[tid];
-		vec3 f = 1 / (h * h * v0.invMass) * (v0.vel - dx);
+		vec3 f = 1 / (h * h * v0.invMass) * (data->d_vels[tid] - dx);
 
 		// Special connections energy
 		if (v0.connectionIndex >= 0) {
@@ -63,7 +63,7 @@ namespace YarnBall {
 			// Cosserat stretching energy
 			{
 				float invl = 1 / v0.lRest;
-				vec3 c = ((p1 - v0.pos) + (p1dx - dx)) * invl - v0.q * vec3(1, 0, 0);
+				vec3 c = ((p1 - v0.pos) + (p1dx - dx)) * invl - data->d_qs[tid] * vec3(1, 0, 0);
 
 				float k = v0.kStretch * invl;
 				float d = k * invl;
@@ -198,21 +198,25 @@ namespace YarnBall {
 			v0.pos *= -2 * v0.kStretch;
 
 			vec4 b(0);
+			auto qs = data->d_qs;
+			auto qRests = data->d_qRests;
+			auto q0 = qs[tid];
 			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
-				auto qRest = Kit::Rotor(verts[tid - 1].qRest);
-				auto qq = verts[tid - 1].q;
-				float s = dot((qq.inverse() * v0.q).v, qRest.v) > 0 ? 1 : -1;
-				b -= (verts[tid - 1].kBend * s) * (qq * qRest).v;
+				auto qRest = Kit::Rotor(qRests[tid - 1]);
+				auto qq = qs[tid - 1];
+				float s = dot((qq.inverse() * q0).v, qRest.v) > 0 ? 1 : -1;
+				b -= s * (qq * qRest).v;
 			}
 
 			if (v0.flags & (uint32_t)VertexFlags::hasNextOrientation) {
-				auto qq = verts[tid + 1].q;
-				float s = dot((v0.q.inverse() * qq).v, v0.qRest) > 0 ? 1 : -1;
-				b -= (v0.kBend * s) * (verts[tid + 1].q * Kit::Rotor(v0.qRest).inverse()).v;
+				auto qRest = Kit::Rotor(qRests[tid]);
+				auto qq = qs[tid + 1];
+				float s = dot((q0.inverse() * qq).v, qRest.v) > 0 ? 1 : -1;
+				b -= s * (qq * qRest.inverse()).v;
 			}
 
-			v0.q = inverseTorque(v0.pos, b);
-			verts[tid].q = v0.q;
+			q0 = inverseTorque(v0.pos, b);
+			qs[tid] = q0;
 		}
 	}
 

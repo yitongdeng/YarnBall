@@ -49,14 +49,8 @@ namespace YarnBall {
 		// Linear 
 		vec3 pos;			// Node position
 		float invMass;		// Inverse nodal mass
-		vec3 vel;			// Node velocity
+
 		float lRest;		// Rest length
-
-		// Rotational
-		Kit::Rotor q;		// Rotation
-		vec4 qRest;			// Resting rotation
-
-		float kBend;		// Bending stiffness
 		float kStretch;		// Stretching stiffness
 		int connectionIndex;// Index of connected node -1 if none. (Used to connect vertices)
 		uint32_t flags;		// Flags see VertexFlags
@@ -64,7 +58,11 @@ namespace YarnBall {
 
 	typedef struct {
 		Vertex* d_verts;		// Device vertex array pointer
+		Kit::Rotor* d_qs;
+		vec4* d_qRests;
+
 		vec3* d_dx;				// Temporary delta position iterants. Stored as deltas for precision.
+		vec3* d_vels;			// Velocity
 		vec3* d_lastVels;		// Velocity from the last frame
 
 		vec3* d_lastPos;		// Last vertex positions. Temp storage to speed up memory access.
@@ -118,6 +116,10 @@ namespace YarnBall {
 		};
 
 		Vertex* verts;
+		Kit::Rotor* qs;		// Quaternions orientations
+		vec4* qRests;		// Rest angles
+		vec3* vels;			// Velocity
+
 		MetaData meta;
 		float maxH = 1e-3;						// Largest time step allowed
 		std::vector<float> initialInvMasses;	// Starting inverse masses saved for pinned vertices.
@@ -143,6 +145,7 @@ namespace YarnBall {
 		Kitten::Mesh* cylMesh = nullptr;
 		Kitten::Mesh* cylMeshHiRes = nullptr;
 		Kitten::CudaComputeBuffer* vertBuffer = nullptr;
+		Kitten::CudaComputeBuffer* qBuffer = nullptr;
 
 		cudaStream_t stream = nullptr;
 		cudaGraphExec_t stepGraph = nullptr;

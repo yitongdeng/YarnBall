@@ -13,7 +13,7 @@ namespace YarnBall {
 		auto lastVels = data->d_lastVels;
 
 		const vec3 g = data->gravity;
-		const vec3 vel = verts[tid].vel;
+		const vec3 vel = data->d_vels[tid];
 		const float invMass = verts[tid].invMass;
 
 		vec3 dx = h * vel;
@@ -24,7 +24,7 @@ namespace YarnBall {
 		if (verts[tid].invMass != 0) {
 			// Compute y (inertial + accel position)
 			// Store it in vel (The actual vel is no longer needed)
-			verts[tid].vel = dx + (h * h) * g;
+			data->d_vels[tid] = dx + (h * h) * g;
 
 			// Compute initial guess
 			float g2 = length2(g);
@@ -64,7 +64,7 @@ namespace YarnBall {
 		// Linear velocity
 		vec3 dx = data->d_dx[tid];
 		if (verts[tid].invMass != 0)
-			verts[tid].vel = dx * invH * (1 - data->drag * h);
+			data->d_vels[tid] = dx * invH * (1 - data->drag * h);
 		verts[tid].pos += dx;
 	}
 

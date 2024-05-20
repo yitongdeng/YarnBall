@@ -30,10 +30,13 @@ namespace YarnBall {
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
+		vels = new vec3[numVerts];
+		qs = new Kit::Rotor[numVerts];
+		qRests = new vec4[numVerts];
 		for (size_t i = 0; i < numVerts; i++) {
 			verts[i].invMass = verts[i].lRest = 1;
-			verts[i].vel = vec3(0);
-			verts[i].kBend = 5.f;
+			vels[i] = vec3(0);
+			qRests[i] = vec4(0, 0, 0, 5.f);
 			verts[i].kStretch = 100.f;
 			verts[i].connectionIndex = -1;
 			verts[i].flags = (uint32_t)VertexFlags::hasNext;
@@ -43,14 +46,21 @@ namespace YarnBall {
 
 	Sim::~Sim() {
 		delete[] verts;
+		delete[] vels;
+		delete[] qs;
+		delete[] qRests;
 		if (stream) {
 			cudaStreamSynchronize(stream);
 			cudaStreamDestroy(stream);
 		}
 
 		if (vertBuffer) delete vertBuffer;
+		if (qBuffer) delete qBuffer;
 		if (d_meta) {
 			cudaFree(meta.d_dx);
+			cudaFree(meta.d_vels);
+			cudaFree(meta.d_qRests);
+
 			cudaFree(meta.d_lastVels);
 			cudaFree(meta.d_lastPos);
 			cudaFree(meta.d_lastFlags);
@@ -99,8 +109,7 @@ namespace YarnBall {
 				throw std::runtime_error("Dangling segment. Yarns must be atleast 2 segments long");
 
 			v.lRest = 1.f / numVerts;
-			v.q = Kit::Rotor::identity();
-			v.qRest = vec4(0, 0, 0, 1);
+			qs[i] = Kit::Rotor::identity();
 
 			float mass = 0;
 			if (v.flags & (uint32_t)VertexFlags::hasPrev)
@@ -112,7 +121,7 @@ namespace YarnBall {
 				v.lRest = length(seg0);
 				if (v.lRest == 0 || !glm::isfinite(v.lRest))
 					throw std::runtime_error("0 length segment");
-				v.q = Kit::Rotor::fromTo(vec3(1, 0, 0), normalize(seg0));
+				qs[i] = Kit::Rotor::fromTo(vec3(1, 0, 0), normalize(seg0));
 
 				mass += v.lRest;
 
@@ -130,11 +139,8 @@ namespace YarnBall {
 		}
 
 		// Init rest orientation
-		for (int i = 0; i < numVerts - 1; i++) {
-			auto& v0 = verts[i];
-			auto& v1 = verts[i + 1];
-			verts[i].qRest = (vec4)(v0.q.inverse() * v1.q);
-		}
+		for (int i = 0; i < numVerts - 1; i++)
+			qRests[i] = length(qRests[i]) * (qs[i].inverse() * qs[i + 1]).v;
 
 		// Mesh for rendering
 		cylMesh = Kit::genCylMesh(6, 1, false);
@@ -150,6 +156,8 @@ namespace YarnBall {
 
 		cudaMalloc(&meta.d_lastVels, sizeof(vec3) * numVerts);
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
+		cudaMalloc(&meta.d_vels, sizeof(vec3) * numVerts);
+		cudaMalloc(&meta.d_qRests, sizeof(vec4) * numVerts);
 		cudaMalloc(&meta.d_lastPos, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_lastCID, sizeof(int) * numVerts);
 		cudaMalloc(&meta.d_lastFlags, sizeof(int) * numVerts);
@@ -162,7 +170,9 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_boundColList, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
+		qBuffer = new Kitten::CudaComputeBuffer(sizeof(Kit::Rotor), numVerts);
 		meta.d_verts = (Vertex*)vertBuffer->cudaPtr;
+		meta.d_qs = (Kit::Rotor*)qBuffer->cudaPtr;
 
 		cudaDeviceSynchronize();
 		cudaStreamCreate(&stream);
@@ -192,7 +202,7 @@ namespace YarnBall {
 		// The l is moved into the kBend, but we also cheated because the darboux vectors
 		// in C should have been scaled by 2/l. So in total we end up dividing once.
 		for (int i = 0; i < meta.numVerts; i++)
-			verts[i].kBend = kBend / verts[i].lRest;
+			qRests[i] = (kBend / verts[i].lRest) * normalize((vec4)qRests[i]);
 	}
 
 	void Sim::uploadMeta() {
@@ -218,25 +228,30 @@ namespace YarnBall {
 
 	void Sim::upload() {
 		cudaMemcpyAsync(meta.d_verts, verts, sizeof(Vertex) * meta.numVerts, cudaMemcpyHostToDevice, stream);
+		cudaMemcpyAsync(meta.d_vels, vels, sizeof(vec3) * meta.numVerts, cudaMemcpyHostToDevice, stream);
+		cudaMemcpyAsync(meta.d_qs, qs, sizeof(Kit::Rotor) * meta.numVerts, cudaMemcpyHostToDevice, stream);
+		cudaMemcpyAsync(meta.d_qRests, qRests, sizeof(vec4) * meta.numVerts, cudaMemcpyHostToDevice, stream);
 		copyTempData << <(meta.numVerts + 511) / 512, 512, 0, stream >> > (meta.d_verts, meta.d_lastFlags, meta.d_lastCID, meta.numVerts);
 		cudaStreamSynchronize(stream);
 	}
 
 	void Sim::download() {
 		cudaMemcpyAsync(verts, meta.d_verts, sizeof(Vertex) * meta.numVerts, cudaMemcpyDeviceToHost, stream);
+		cudaMemcpyAsync(vels, meta.d_vels, sizeof(vec3) * meta.numVerts, cudaMemcpyDeviceToHost, stream);
+		cudaMemcpyAsync(qs, meta.d_qs, sizeof(Kit::Rotor) * meta.numVerts, cudaMemcpyDeviceToHost, stream);
 		cudaStreamSynchronize(stream);
 	}
 
-	__global__ void zeroVels(Vertex* verts, vec3* lastVels, int numVerts) {
+	__global__ void zeroVels(vec3* vels, vec3* lastVels, int numVerts) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		if (tid >= numVerts) return;
 
-		verts[tid].vel = vec3(0);
+		vels[tid] = vec3(0);
 		lastVels[tid] = vec3(0);
 	}
 
 	void Sim::zeroVelocities() {
-		zeroVels << <(meta.numVerts + 1023) / 1024, 1024, 0, stream >> > (meta.d_verts, meta.d_lastVels, meta.numVerts);
+		zeroVels << <(meta.numVerts + 1023) / 1024, 1024, 0, stream >> > (meta.d_vels, meta.d_lastVels, meta.numVerts);
 		checkCudaErrors(cudaGetLastError());
 	}
 

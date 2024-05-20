@@ -40,6 +40,8 @@ void main() {
 
 	norm = (modelMat * vec4(basis * (vec3(1, 0, 1) * vPos), 0)).xyz;
 
+	vec4 q = qs[gl_InstanceID];
+
 	// Rotation frame
-	mPos = 4 * rotorMatrix(vec4(-n0.q.xyz, n0.q.w)) * basis * (vec3(1, l / radius, 1) * (vPos + vec3(0, -0.5, 0)));
+	mPos = 4 * rotorMatrix(vec4(-q.xyz, q.w)) * basis * (vec3(1, l / radius, 1) * (vPos + vec3(0, -0.5, 0)));
 }
