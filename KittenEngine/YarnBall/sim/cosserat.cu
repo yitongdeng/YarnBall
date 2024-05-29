@@ -1,7 +1,6 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include "../YarnBall.h"
-#include "KittenEngine/includes/modules/SymMat.h"
 
 namespace YarnBall {
 	using Kit::hess3;

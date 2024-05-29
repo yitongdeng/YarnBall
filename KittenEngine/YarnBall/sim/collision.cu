@@ -146,14 +146,4 @@ namespace YarnBall {
 		else
 			recomputeStepLimitKernel<false> << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
 	}
-
-	__global__ void transferSegmentDataKernel(MetaData* data) {
-		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-		if (tid >= data->numVerts) return;
-		data->d_lastPos[tid] = data->d_verts[tid].pos;
-	}
-
-	void Sim::transferSegmentData() {
-		transferSegmentDataKernel << <(meta.numVerts + 127) / 128, 128 >> > (d_meta);
-	}
 }

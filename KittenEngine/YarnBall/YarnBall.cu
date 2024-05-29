@@ -27,6 +27,7 @@ namespace YarnBall {
 		meta.useStepSizeLimit = 1;
 		meta.bvhRebuildPeriod = 1 / 60.f;
 		meta.numItr = 8;
+		meta.useMotionFitting = true;
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
@@ -60,6 +61,7 @@ namespace YarnBall {
 			cudaFree(meta.d_dx);
 			cudaFree(meta.d_vels);
 			cudaFree(meta.d_qRests);
+			cudaFree(meta.d_motions);
 
 			cudaFree(meta.d_lastVels);
 			cudaFree(meta.d_lastPos);
@@ -168,6 +170,7 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_collisions, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 		cudaMalloc(&meta.d_bounds, sizeof(Kit::LBVH::aabb) * numVerts);
 		cudaMalloc(&meta.d_boundColList, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
+		cudaMalloc(&meta.d_motions, sizeof(LinearMotionSum) * numVerts);
 
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
 		qBuffer = new Kitten::CudaComputeBuffer(sizeof(Kit::Rotor), numVerts);

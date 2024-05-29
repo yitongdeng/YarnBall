@@ -179,7 +179,8 @@ void renderGui() {
 			sim->printCollisionStats();
 		if (ImGui::Button("Zero velocity"))
 			sim->zeroVelocities();
-
+		if (ImGui::Button("Test deform"))
+			sim->testMotionDeform();
 		ImGui::Separator();
 		ImGui::TreePop();
 	}
