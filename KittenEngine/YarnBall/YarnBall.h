@@ -76,7 +76,9 @@ namespace YarnBall {
 		int* d_lastCID;			// Last cid. Temp storage to speed up memory access.
 
 		int* d_numCols;					// Number of collisions for each segment
-		float* d_maxStepSize;			// Max step size for each vertex
+		vec3* d_maxStepCenter;			// Max step sphere center
+		float* d_maxStepSize;			// Max step size for the segment
+		vec3* d_colCenter;			// Max step sphere center
 		int* d_collisions;				// Collisions IDs stored as the other segment index.
 		Kit::LBVH::aabb* d_bounds;		// AABBs
 		ivec2* d_boundColList;			// Colliding segment AABB IDs. 

@@ -68,6 +68,8 @@ namespace YarnBall {
 			cudaFree(meta.d_lastFlags);
 			cudaFree(meta.d_lastCID);
 			cudaFree(meta.d_numCols);
+			cudaFree(meta.d_maxStepCenter);
+			cudaFree(meta.d_colCenter);
 			cudaFree(meta.d_maxStepSize);
 			cudaFree(meta.d_collisions);
 			cudaFree(meta.d_bounds);
@@ -164,6 +166,8 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_lastCID, sizeof(int) * numVerts);
 		cudaMalloc(&meta.d_lastFlags, sizeof(int) * numVerts);
 
+		cudaMalloc(&meta.d_maxStepCenter, sizeof(vec3) * numVerts);
+		cudaMalloc(&meta.d_colCenter, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_maxStepSize, sizeof(float) * numVerts);
 		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
 		cudaMemset(meta.d_numCols, 0, sizeof(int) * meta.numVerts);

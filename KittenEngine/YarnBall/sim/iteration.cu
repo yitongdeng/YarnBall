@@ -66,8 +66,11 @@ namespace YarnBall {
 			initItr <true> << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
 			transferMotion();
 		}
-		else
+		else {
 			initItr <false> << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
+			meta.linearMotionMatrix = mat3(0);
+			meta.linearMotionVector = vec3(0);
+		}
 	}
 
 	// Converts dx back to velocity and advects

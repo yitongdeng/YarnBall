@@ -166,8 +166,11 @@ namespace YarnBall {
 			vec3 delta = data->accelerationRatio * (inverse((mat3)H) * f);
 			dx += delta;
 
+			vec3 center = data->d_maxStepCenter[tid];
+			dx -= center;
 			float l = length(dx);
 			if (l > stepLimit && l > 0) dx *= stepLimit / l;
+			dx += center;
 
 			// Apply update
 			dxs[tid] = dx;
