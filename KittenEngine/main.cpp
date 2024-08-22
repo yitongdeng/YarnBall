@@ -181,6 +181,8 @@ void renderGui() {
 			sim->zeroVelocities();
 		if (ImGui::Button("Test deform"))
 			sim->testMotionDeform();
+		if (ImGui::Button("Disable motion fitting"))
+			sim->meta.useMotionFitting = false;
 		ImGui::Separator();
 		ImGui::TreePop();
 	}
@@ -210,6 +212,20 @@ void renderGui() {
 		ImGui::Separator();
 		if (ImGui::Button("Export frame"))
 			sim->exportToOBJ("./frame.obj");
+		if (ImGui::Button("Test perf")) {
+			constexpr float adv = 1.0f;
+			auto s = sim->stepCount();
+
+			Kit::StopWatch timer;
+			sim->advance(adv);
+			auto dt = timer.time();
+
+			auto numSteps = sim->stepCount() - s;
+
+			printf("Advanced %f s in %zd steps\n", adv, numSteps);
+			printf("Elapsed %f s (%f ms per step). Ratio %f.\n", dt, dt / numSteps * 1000, adv / dt);
+			Kit::print(sim->bounds().max - sim->bounds().min);
+		}
 	}
 
 	ImGui::End();

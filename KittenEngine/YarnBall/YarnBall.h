@@ -170,6 +170,8 @@ namespace YarnBall {
 		Sim(int numVerts);
 		~Sim();
 
+		inline size_t stepCount() { return stepCounter; }
+
 		// Initializes memory and sets up rest length, angles, and mass
 		void configure(float density = 1e-3);
 		void setKBend(float k = 3e-9);
