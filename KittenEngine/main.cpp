@@ -175,6 +175,14 @@ void renderGui() {
 		ImGui::DragFloat3("Gravity", (float*)&sim->meta.gravity);
 		ImGui::Separator();
 
+		ImGui::InputFloat("Max dt", &sim->maxH, 1e-4, 1e-3, "%.5f");
+		ImGui::InputInt("Itr", &sim->meta.numItr);
+
+		ImGui::Separator();
+		if (sim->meta.detectionPeriod >= 0 && ImGui::Button("Disable collision"))
+			sim->meta.detectionPeriod = -1;
+		if (sim->meta.useStepSizeLimit && ImGui::Button("Disable step limiting")) 
+			sim->meta.useStepSizeLimit = false;
 		if (ImGui::Button("Print cols"))
 			sim->printCollisionStats();
 		if (ImGui::Button("Zero velocity"))
