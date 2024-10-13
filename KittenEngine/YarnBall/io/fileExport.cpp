@@ -1,5 +1,6 @@
 #include "../YarnBall.h"
 #include <vector>
+#include <iostream>
 
 namespace YarnBall {
 	void Sim::exportToBCC(std::string path) {

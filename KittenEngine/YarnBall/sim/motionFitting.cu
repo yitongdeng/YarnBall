@@ -1,4 +1,5 @@
 #include "../YarnBall.h"
+#include <thrust/device_ptr.h>
 #include <thrust/reduce.h>
 #include "KittenEngine/opt/svd.h"
 

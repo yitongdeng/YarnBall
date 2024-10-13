@@ -305,7 +305,7 @@ void initScene() {
 		const float segLen = 0.002f;
 
 		for (size_t i = 0; i < 32; i++)
-			sim->verts[i].pos = vec3(segLen * i, 0, 0);
+			sim->verts[i].pos = vec3(segLen * i, segLen * (i % 2), 0);
 		for (size_t i = 0; i < 32; i++)
 			sim->verts[i + 32].pos = vec3(segLen * 12, -4 * segLen, segLen * i - 16 * segLen);
 
