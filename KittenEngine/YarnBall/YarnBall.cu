@@ -27,7 +27,7 @@ namespace YarnBall {
 		meta.useStepSizeLimit = 1;
 		meta.bvhRebuildPeriod = 1 / 60.f;
 		meta.numItr = 8;
-		meta.useMotionFitting = true;
+		meta.useMotionFitting = false;
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
