@@ -25,8 +25,10 @@ bool exportSim = false;
 bool scenarioTwist = false;
 bool scenarioPull = false;
 bool scenarioGrav = false;
+bool scenarioTwirl = false;
 
 vector<vec3> initialPos;
+vector<Kit::Rotor> initialQ;
 Kit::Bound<> initialBounds;
 
 vec3 rotateY(vec3 v, float angle) {
@@ -126,6 +128,19 @@ void renderScene() {
 			gravTime += advTime;
 		}
 
+		if (scenarioTwirl) {
+			sim->download();
+
+			static float twirlTime = 0;
+			twirlTime += advTime;
+			sim->verts[sim->meta.numVerts - 1].pos =
+				initialPos[sim->meta.numVerts - 1] - vec3(glm::clamp(0.01f * (twirlTime - 5), 0.f, 0.1f), 0, 0);
+			float theta = 1.f * glm::max(twirlTime - 2, 0.f);
+			sim->qs[sim->meta.numVerts - 2] = initialQ[sim->meta.numVerts - 2] * Kit::Rotor(sin(0.5f * theta), 0, 0, cos(0.5f * theta));
+
+			sim->upload();
+		}
+
 		Kit::StopWatch timer;
 		sim->advance(advTime);
 		float measuredTime = timer.time();
@@ -181,7 +196,7 @@ void renderGui() {
 		ImGui::Separator();
 		if (sim->meta.detectionPeriod >= 0 && ImGui::Button("Disable collision"))
 			sim->meta.detectionPeriod = -1;
-		if (sim->meta.useStepSizeLimit && ImGui::Button("Disable step limiting")) 
+		if (sim->meta.useStepSizeLimit && ImGui::Button("Disable step limiting"))
 			sim->meta.useStepSizeLimit = false;
 		if (ImGui::Button("Print cols"))
 			sim->printCollisionStats();
@@ -217,6 +232,7 @@ void renderGui() {
 		ImGui::Checkbox("Twist", &scenarioTwist);
 		ImGui::Checkbox("Pull", &scenarioPull);
 		ImGui::Checkbox("Grav Pull", &scenarioGrav);
+		ImGui::Checkbox("Twirl", &scenarioTwirl);
 		ImGui::Separator();
 		if (ImGui::Button("Export frame"))
 			sim->exportToOBJ("./frame.obj");
@@ -264,13 +280,6 @@ void initScene() {
 			exit(-1);
 		}
 
-		// Copy initial state for animation.
-		initialPos.resize(sim->meta.numVerts);
-		for (size_t i = 0; i < sim->meta.numVerts; i++) {
-			auto pos = sim->verts[i].pos;
-			initialPos[i] = pos;
-			initialBounds.absorb(pos);
-		}
 
 		sim->upload();
 		printf("Total verts: %d\n", sim->meta.numVerts);
@@ -293,36 +302,48 @@ void initScene() {
 		sim->verts[31].flags = 0;
 		sim->meta.kCollision = 1e-7;
 		sim->configure();
-		sim->setKBend(1e-7);
-		sim->setKStretch(1e-2);
+		sim->setKBend(1e-8);
+		sim->setKStretch(2e-2);
 		sim->maxH = 1e-3;
 		sim->upload();
 		sim->meta.gravity = vec3(-3, -3, 0);
 	}
 	else if (true) {
-		constexpr int numVerts = 64;
+		constexpr int numVerts = 200;
 		sim = new YarnBall::Sim(numVerts);
 		const float segLen = 0.002f;
 
-		for (size_t i = 0; i < 32; i++)
-			sim->verts[i].pos = vec3(segLen * i, segLen * (i % 2), 0);
-		for (size_t i = 0; i < 32; i++)
-			sim->verts[i + 32].pos = vec3(segLen * 12, -4 * segLen, segLen * i - 16 * segLen);
+		for (size_t i = 0; i < numVerts; i++)
+			sim->verts[i].pos = vec3(segLen * i, 32 * segLen * exp(-2000 * Kit::pow2(segLen * (i - numVerts * 0.5f + 0.5f))), 0);
+		//for (size_t i = 0; i < 32; i++)
+		//	sim->verts[i + 32].pos = vec3(segLen * 12, -4 * segLen, segLen * i - 16 * segLen);
 
-		sim->verts[0].invMass = sim->verts[32].invMass = sim->verts[63].invMass = 0;
+		sim->verts[32].invMass = sim->verts[numVerts - 1].invMass = 0;
 		sim->verts[0].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
-		sim->verts[31].flags = 0;
+		sim->verts[numVerts - 2].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
 
 		sim->configure();
-		sim->setKBend(3e-9);
-		sim->setKStretch(1e-2);
+		sim->setKBend(3e-8);
+		sim->setKStretch(2e-2);
 		sim->meta.kCollision = 5e-7;
-		sim->meta.frictionCoeff = 0.0f;
+		sim->meta.radius = 0.4f * segLen;
 		// sim->meta.detectionScaler = 3;
 		// sim->maxH = 1e-4f;
 		sim->upload();
-		sim->meta.gravity = vec3(-3, -1.5, 3);
+		sim->meta.gravity = vec3(0);
 	}
+
+	// Copy initial state for animation.
+	initialPos.resize(sim->meta.numVerts);
+	initialQ.resize(sim->meta.numVerts - 1);
+	for (size_t i = 0; i < sim->meta.numVerts; i++) {
+		auto pos = sim->verts[i].pos;
+		initialPos[i] = pos;
+		initialBounds.absorb(pos);
+		if (i < sim->meta.numVerts - 1)
+			initialQ[i] = sim->qs[i];
+	}
+
 	camera.pos = sim->verts[0].pos;
 	camera.minDistance = 0.01f;
 
