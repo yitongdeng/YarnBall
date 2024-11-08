@@ -5,19 +5,6 @@
 namespace YarnBall {
 	using Kit::hess3;
 
-	__device__ inline vec4 inverseTorque(vec3 f, vec4 b) {
-		float f2 = length2(f);
-		float s = sqrt(f2) + length(b);
-		float D = 1 / (f2 - s * s);
-		b *= D;
-		return normalize(mat4(
-			s - f.x, -f.y, -f.z, 0,
-			-f.y, s + f.x, 0, f.z,
-			-f.z, 0, s + f.x, -f.y,
-			0, f.z, -f.y, s - f.x
-		) * b);
-	}
-
 #define BLOCK_SIZE (256)
 	__global__ void cosseratItr(MetaData* data) {
 		const int tid = (int)(blockIdx.x * (BLOCK_SIZE - 1) + threadIdx.x) - 1;
@@ -207,17 +194,18 @@ namespace YarnBall {
 				auto qRest = Kit::Rotor(qRests[tid - 1]);
 				auto qq = qs[tid - 1];
 				float s = dot((qq.inverse() * q0).v, qRest.v) > 0 ? 1 : -1;
-				b -= s * (qq * qRest).v;
+				b += s * (qq * qRest).v;
 			}
 
 			if (v0.flags & (uint32_t)VertexFlags::hasNextOrientation) {
 				auto qRest = Kit::Rotor(qRests[tid]);
 				auto qq = qs[tid + 1];
 				float s = dot((q0.inverse() * qq).v, qRest.v) > 0 ? 1 : -1;
-				b -= s * (qq * qRest.inverse()).v;
+				b += s * (qq * qRest.inverse()).v;
 			}
 
-			q0 = inverseTorque(v0.pos, b);
+			float lambda = length(v0.pos) + length(b);
+			q0 = Kit::Rotor(normalize((Kit::Rotor(v0.pos) * Kit::Rotor(b) * Kit::Rotor(1)).v + lambda * b));
 			qs[tid] = q0;
 		}
 	}
