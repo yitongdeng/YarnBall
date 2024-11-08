@@ -102,7 +102,7 @@ namespace YarnBall {
 		std::ifstream file(path);
 
 		if (!file.is_open())
-			throw std::runtime_error("Could not open file");
+			throw std::runtime_error("Could not open file.");
 
 		// Read in raw data
 		std::string line;
@@ -119,24 +119,26 @@ namespace YarnBall {
 				isPoint = false;
 				continue;
 			}
+			else if (line == "END")
+				break;
 
 			if (isPoint) {
 				int id;
 				float x, y, z;
 				char colon;
 				if (iss >> id >> colon >> x >> y >> z && colon == ':') {
-					points.push_back(vec3(x, y, z));
+					points.push_back(0.01f * vec3(x, y, z));
 					if (id != points.size())
-						throw std::runtime_error("Error parsing .poly");
+						throw std::runtime_error("Error parsing .poly. Point id mismatch.");
 				}
-				else throw std::runtime_error("Error parsing .poly");
+				else throw std::runtime_error("Error parsing .poly. Point parse error.");
 			}
 			else {
 				int id, i, j;
 				char colon;
 				if (iss >> id >> colon >> i >> j && colon == ':')
 					segs.push_back(ivec2(i - 1, j - 1));
-				else throw std::runtime_error("Error parsing .poly");
+				else throw std::runtime_error("Error parsing .poly. Segment parse error.");
 			}
 		}
 
@@ -167,7 +169,7 @@ namespace YarnBall {
 			int curI = i;
 
 			// Just keep following the curve until we get to the end
-			while (true) {
+			while (!visited[curI]) {
 				visited[curI] = true;
 				curve.push_back(points[curI]);
 
@@ -182,7 +184,10 @@ namespace YarnBall {
 				}
 			}
 
+			if (curve.size() < 4) continue;
+			printf("Found open curve with %zd points from %d to %d\n", curve.size(), i + 1, curI + 1);
 			curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
+			numVerts += curve.size();
 			curves.push_back(curve);
 			isCurveClosed.push_back(false);
 		}
@@ -191,7 +196,8 @@ namespace YarnBall {
 		for (int i = 0; i < points.size(); i++) {
 			if (visited[i]) continue;
 			int numCon = segMap.count(i);
-			if (numCon != 2) continue;
+			if (numCon != 2)
+				throw std::runtime_error("Graphs not allowed.");
 
 			vector<vec3> curve;
 			int curI = i;
@@ -202,17 +208,29 @@ namespace YarnBall {
 				curve.push_back(points[curI]);
 
 				// Find the next point
+				bool found = false;
+				bool isEnd = false;
 				auto range = segMap.equal_range(curI);
 				if (range.first == range.second) break;
 				for (auto it = range.first; it != range.second; it++) {
 					if (!visited[it->second]) {
 						curI = it->second;
+						found = true;
 						break;
 					}
+					if (it->second == i) isEnd = true;
+				}
+
+				if (!found) {
+					if (!isEnd) throw std::runtime_error("Closed curve not closed.");
+					break;
 				}
 			}
 
+			if (curve.size() < 4) continue;
+			printf("Found closed curve with %zd points from %d to %d\n", curve.size(), i + 1, curI + 1);
 			curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
+			numVerts += curve.size();
 			curves.push_back(curve);
 			isCurveClosed.push_back(true);
 		}
