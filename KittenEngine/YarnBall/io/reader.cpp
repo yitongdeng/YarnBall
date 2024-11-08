@@ -98,7 +98,7 @@ namespace YarnBall {
 		return createFromCurves(curves, isCurveClosed, numVerts);
 	}
 
-	Sim* readFromPoly(std::string path, float targetSegLen) {
+	Sim* readFromPoly(std::string path, float targetSegLen, bool breakUpClosedCurves) {
 		std::ifstream file(path);
 
 		if (!file.is_open())
@@ -232,7 +232,7 @@ namespace YarnBall {
 			curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
 			numVerts += curve.size();
 			curves.push_back(curve);
-			isCurveClosed.push_back(true);
+			isCurveClosed.push_back(!breakUpClosedCurves);
 		}
 
 		return createFromCurves(curves, isCurveClosed, numVerts);

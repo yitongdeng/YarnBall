@@ -22,7 +22,8 @@ namespace YarnBall {
 		auto dataPath = root["curveFile"].asString();
 		// If ends with .poly
 		if (dataPath.size() > 5 && dataPath.substr(dataPath.size() - 5) == ".poly")
-			sim = readFromPoly(dataPath, root["resampleLength"].asFloat());
+			sim = readFromPoly(dataPath, root["resampleLength"].asFloat(),
+				root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool());
 		else
 			sim = readFromBCC(dataPath, root["resampleLength"].asFloat());
 
