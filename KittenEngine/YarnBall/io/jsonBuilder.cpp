@@ -25,7 +25,8 @@ namespace YarnBall {
 			sim = readFromPoly(dataPath, root["resampleLength"].asFloat(),
 				root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool());
 		else
-			sim = readFromBCC(dataPath, root["resampleLength"].asFloat());
+			sim = readFromBCC(dataPath, root["resampleLength"].asFloat(),
+				root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool());
 
 		if (!root["curveRadius"].isNull()) {
 			float r = root["curveRadius"].asFloat();

@@ -47,7 +47,7 @@ namespace YarnBall {
 		return sim;
 	}
 
-	Sim* readFromBCC(std::string path, float targetSegLen) {
+	Sim* readFromBCC(std::string path, float targetSegLen, bool breakUpClosedCurves) {
 		BCCHeader header;
 		FILE* pFile = fopen(path.c_str(), "rb");
 		if (!pFile) throw std::runtime_error("Could not open file");
@@ -88,7 +88,7 @@ namespace YarnBall {
 			// Ignore curves with less than 3 points
 			if (numPoints < 3) continue;
 
-			isCurveClosed.push_back(isClosed);
+			isCurveClosed.push_back(isClosed && !breakUpClosedCurves);
 			curves.push_back(points);
 			numVerts += points.size();
 		}

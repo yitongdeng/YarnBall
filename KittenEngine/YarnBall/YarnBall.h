@@ -217,7 +217,7 @@ namespace YarnBall {
 		void rebuildCUDAGraph();
 	};
 
-	Sim* readFromBCC(std::string path, float targetSegLen);
+	Sim* readFromBCC(std::string path, float targetSegLen, bool breakUpClosedCurves = false);
 	Sim* readFromPoly(std::string path, float targetSegLen, bool breakUpClosedCurves = false);
 	Sim* buildFromJSON(std::string path);
 }
