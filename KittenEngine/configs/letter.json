@@ -3,7 +3,9 @@
 	"resampleLength": 2e-3,
 	"breakUpClosedCurves": true,
 	"curveRadius": 0.0010,
-	"fixBorders": [0, 0, 0.01, 0, 0, 0],
+	"fixVertex": [[-0.001078, 0.110836, -0.004289, 0.001]
+				,[-0.068234, 0.0244928, -0.00661, 0.001]
+				,[0.050153, 0.055448, -0.008196, 0.001]],
 
 	"simulation": {
 		// Material

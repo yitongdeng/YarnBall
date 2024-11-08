@@ -115,6 +115,24 @@ namespace YarnBall {
 			}
 		}
 
+		if (!root["fixVertex"].isNull()) {
+			auto vertices = root["fixVertex"];
+			if (vertices.isArray())
+				for (int i = 0; i < vertices.size(); i++)
+					if (vertices[i].isArray()) {
+						auto sphere = vertices[i];
+						if (sphere.size() < 3) continue;
+						vec3 pos(sphere[0].asFloat(), sphere[1].asFloat(), sphere[2].asFloat());
+						float r2 = (sphere.size() > 3) ? sphere[3].asFloat() : 0.001f;
+						r2 *= r2;
+
+						for (int j = 0; j < sim->meta.numVerts; j++)
+							if (glm::length2(sim->verts[j].pos - pos) < r2)
+								sim->verts[j].invMass = 0;
+					}
+					else sim->verts[vertices[i].asInt()].invMass = 0;
+		}
+
 		sim->upload();
 		return sim;
 	}
