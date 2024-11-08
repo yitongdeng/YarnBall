@@ -84,7 +84,7 @@
     <ClCompile Include="YarnBall\io\render.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="YarnBall\io\bccReader.cpp">
+    <ClCompile Include="YarnBall\io\reader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="YarnBall\io\jsonBuilder.cpp">
@@ -231,6 +231,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="KittenEngine\includes\modules\Gizmos.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="YarnBall\io\resample.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

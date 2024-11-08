@@ -17,9 +17,14 @@ namespace YarnBall {
 		if (!Json::parseFromStream(rbuilder, file, &root, &errs))
 			throw std::runtime_error("Error parsing the JSON file: " + errs);
 
-		Sim* sim = readFromBCC(
-			root["curveFile"].asCString(),
-			root["resampleLength"].asFloat());
+		Sim* sim = nullptr;
+
+		auto dataPath = root["curveFile"].asString();
+		// If ends with .poly
+		if (dataPath.size() > 5 && dataPath.substr(dataPath.size() - 5) == ".poly")
+			sim = readFromPoly(dataPath, root["resampleLength"].asFloat());
+		else
+			sim = readFromBCC(dataPath, root["resampleLength"].asFloat());
 
 		if (!root["curveRadius"].isNull()) {
 			float r = root["curveRadius"].asFloat();

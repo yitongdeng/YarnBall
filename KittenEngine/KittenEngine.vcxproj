@@ -197,7 +197,7 @@
     <ClCompile Include="KittenEngine\src\Texture.cpp" />
     <ClCompile Include="KittenEngine\src\Timer.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="YarnBall\io\bccReader.cpp" />
+    <ClCompile Include="YarnBall\io\reader.cpp" />
     <ClCompile Include="YarnBall\io\fileExport.cpp" />
     <ClCompile Include="YarnBall\io\jsonBuilder.cpp" />
     <ClCompile Include="YarnBall\io\render.cpp" />
@@ -267,6 +267,7 @@
     <ClInclude Include="KittenEngine\opt\svd\Singular_Value_Decomposition_Main_Kernel_Body.hpp" />
     <ClInclude Include="KittenEngine\opt\svd\Singular_Value_Decomposition_Preamble.hpp" />
     <ClInclude Include="KittenEngine\opt\toms178.hpp" />
+    <ClInclude Include="YarnBall\io\resample.h" />
     <ClInclude Include="YarnBall\YarnBall.h" />
   </ItemGroup>
   <ItemGroup>

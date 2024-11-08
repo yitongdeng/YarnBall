@@ -218,5 +218,6 @@ namespace YarnBall {
 	};
 
 	Sim* readFromBCC(std::string path, float targetSegLen);
+	Sim* readFromPoly(std::string path, float targetSegLen);
 	Sim* buildFromJSON(std::string path);
 }
