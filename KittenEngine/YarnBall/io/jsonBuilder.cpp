@@ -123,14 +123,33 @@ namespace YarnBall {
 						auto sphere = vertices[i];
 						if (sphere.size() < 3) continue;
 						vec3 pos(sphere[0].asFloat(), sphere[1].asFloat(), sphere[2].asFloat());
-						float r2 = (sphere.size() > 3) ? sphere[3].asFloat() : 0.001f;
-						r2 *= r2;
 
-						for (int j = 0; j < sim->meta.numVerts; j++)
-							if (glm::length2(sim->verts[j].pos - pos) < r2)
-								sim->verts[j].invMass = 0;
+						if (sphere.size() >= 4) {
+							// Pin all within radius
+							float r2 = sphere[3].asFloat();
+							r2 *= r2;
+
+							for (int j = 0; j < sim->meta.numVerts; j++)
+								if (glm::length2(sim->verts[j].pos - pos) < r2)
+									sim->verts[j].invMass = 0;
+						}
+						else {
+							// Just pin the closest
+							float minDist = INFINITY;
+							int closest = -1;
+							for (int j = 0; j < sim->meta.numVerts; j++) {
+								auto dist = glm::length2(sim->verts[j].pos - pos);
+								if (dist < minDist) {
+									minDist = dist;
+									closest = j;
+								}
+							}
+
+							if (closest >= 0)
+								sim->verts[closest].invMass = 0;
+						}
 					}
-					else sim->verts[vertices[i].asInt()].invMass = 0;
+					else sim->verts[vertices[i].asInt()].invMass = 0;	// Pin exact vertex index.
 		}
 
 		sim->upload();

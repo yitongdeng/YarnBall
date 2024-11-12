@@ -1,11 +1,14 @@
 {
-	"curveFile": "configs/models/letter_A.poly",
+	"curveFile": "configs/models/letter_G_v4.poly",
 	"resampleLength": 2e-3,
 	"breakUpClosedCurves": true,
 	"curveRadius": 0.0010,
-	"fixVertex": [[-0.001078, 0.110836, -0.004289, 0.001]
-				,[-0.068234, 0.0244928, -0.00661, 0.001]
-				,[0.050153, 0.055448, -0.008196, 0.001]],
+	"fixVertex": [[0.089308, -0.092941, -0.019133]
+				,[-0.054342, 0.081929, -0.020631]
+				,[-0.086251, 0.055472, 0.008579]
+				,[0.09746, -0.046577, -0.005506]
+				,[-0.067291, 0.08238, -0.008863]
+				,[-0.056245, 0.081716, 0.021499]],
 
 	"simulation": {
 		// Material
@@ -15,7 +18,7 @@
 		"kBend": 2e-7,
 		"kCollision": 2e-4,
 		"kFriction": 5,
-		"damping": 1e-6,
+		"damping": 1e-7,
 
 		// Env
 		"gravity": [0, -9.8, 0],
