@@ -352,3 +352,5 @@ KittenEngine/imgui.ini
 KittenEngine/frames/
 
 KittenEngine/frame.obj
+
+KittenEngine/frameFiber.obj

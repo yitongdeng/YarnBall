@@ -102,6 +102,9 @@
     <ClCompile Include="KittenEngine\src\Gizmos.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="YarnBall\io\fiberMesher.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="KittenEngine\includes\modules\Bound.h">
@@ -234,6 +237,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="YarnBall\io\resample.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="YarnBall\io\fastPRNG.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

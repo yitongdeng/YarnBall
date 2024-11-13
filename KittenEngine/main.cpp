@@ -22,6 +22,7 @@ Kit::Dist simSpeedDist;
 const float EXPORT_DT = 1 / 30.f;
 
 bool exportSim = false;
+bool exportFiberLevel = false;
 bool scenarioTwist = false;
 bool scenarioPull = false;
 bool scenarioGrav = false;
@@ -147,7 +148,16 @@ void renderScene() {
 
 		if (exportSim) {
 			static int frameID = 0;
-			sim->exportToOBJ("./frames/frame" + to_string(frameID++) + ".obj");
+			if (frameID == 299) {
+				exportSim = false;
+				simulate = false;
+			}
+			if (exportFiberLevel) {
+				printf("Exporting fiber frame %d\n", frameID);
+				sim->exportFiberMesh("./frames/frame" + to_string(frameID++) + ".obj");
+			}
+			else
+				sim->exportToOBJ("./frames/frame" + to_string(frameID++) + ".obj");
 		}
 
 		if (simSpeedDist.num > 60)
@@ -229,11 +239,14 @@ void renderGui() {
 
 	if (ImGui::TreeNode("Export")) {
 		ImGui::Checkbox("Export", &exportSim);
+		ImGui::Checkbox("Export as Fiber Mesh", &exportFiberLevel);
 		ImGui::Checkbox("Twist", &scenarioTwist);
 		ImGui::Checkbox("Pull", &scenarioPull);
 		ImGui::Checkbox("Grav Pull", &scenarioGrav);
 		ImGui::Checkbox("Twirl", &scenarioTwirl);
 		ImGui::Separator();
+		if (ImGui::Button("Export fiber mesh"))
+			sim->exportFiberMesh("./frameFiber.obj");
 		if (ImGui::Button("Export frame"))
 			sim->exportToOBJ("./frame.obj");
 		if (ImGui::Button("Test perf")) {
@@ -255,7 +268,7 @@ void renderGui() {
 	ImGui::End();
 }
 
-void initScene() {
+void initScene(const char* config) {
 	Kit::loadDirectory("resources");
 
 	Kit::UBOLight light;
@@ -272,15 +285,17 @@ void initScene() {
 	camera.angle = vec2(30, 30);
 	if (true) {
 		try {
-			sim = YarnBall::buildFromJSON("configs/letterS.json");
-			//sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
-			// sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
+			if (config)
+				sim = YarnBall::buildFromJSON(config);
+			else
+				sim = YarnBall::buildFromJSON("./configs/letterG.json");
+			//sim = YarnBall::buildFromJSON("./configs/cable_work_pattern.json");
+			// sim = YarnBall::buildFromJSON("./configs/openwork_trellis_pattern.json");
 		}
 		catch (const std::exception& e) {
 			printf("Error: %s\n", e.what());
 			exit(-1);
 		}
-
 
 		sim->upload();
 		printf("Total verts: %d\n", sim->meta.numVerts);
@@ -385,7 +400,7 @@ int main(int argc, char** argv) {
 	Kit::getIO().keyCallback = keyCallback;
 
 	// Init scene
-	initScene();
+	initScene((argc >= 2) ? argv[1] : nullptr);
 
 	while (!Kit::shouldClose()) {
 		Kit::startFrame();

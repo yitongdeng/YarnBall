@@ -194,6 +194,7 @@ namespace YarnBall {
 		void printCollisionStats();
 		Kitten::LBVH::aabb bounds();
 
+		void exportFiberMesh(std::string path);
 		void exportToBCC(std::string path);
 		void exportToOBJ(std::string path);
 
