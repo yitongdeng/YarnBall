@@ -93,6 +93,7 @@ namespace YarnBall {
 		meta.minSegLen = FLT_MAX;
 		initialInvMasses.resize(numVerts);
 
+		auto lastQ = Kit::Rotor::identity();
 		// Init mass and orientation
 		for (int i = 0; i < numVerts; i++) {
 			auto& v = verts[i];
@@ -113,7 +114,6 @@ namespace YarnBall {
 				throw std::runtime_error("Dangling segment. Yarns must be atleast 2 segments long");
 
 			v.lRest = 1.f / numVerts;
-			qs[i] = Kit::Rotor::identity();
 
 			float mass = 0;
 			if (v.flags & (uint32_t)VertexFlags::hasPrev)
@@ -125,13 +125,21 @@ namespace YarnBall {
 				v.lRest = length(seg0);
 				if (v.lRest == 0 || !glm::isfinite(v.lRest))
 					throw std::runtime_error("0 length segment");
-				qs[i] = Kit::Rotor::fromTo(vec3(1, 0, 0), normalize(seg0));
+
+				// Init orientation based on minimizing twist t with 
+				// min |q1 t - q0|^2 = min |t - q1^-1 q0|^2
+				// i.e. t is just the normalized x and w components.
+				auto qq = Kit::Rotor::fromTo(vec3(1, 0, 0), normalize(seg0));
+				auto t = qq.inverse() * lastQ;
+				t = normalize(vec4(t.x, 0, 0, t.w));
+				lastQ = qq * t;
 
 				mass += v.lRest;
 
 				meta.maxSegLen = max(meta.maxSegLen, v.lRest);
 				meta.minSegLen = min(meta.minSegLen, v.lRest);
 			}
+			qs[i] = lastQ;
 
 			mass *= 0.5f * density;
 

@@ -272,7 +272,7 @@ void initScene() {
 	camera.angle = vec2(30, 30);
 	if (true) {
 		try {
-			sim = YarnBall::buildFromJSON("configs/letterH.json");
+			sim = YarnBall::buildFromJSON("configs/letterS.json");
 			//sim = YarnBall::buildFromJSON("configs/cable_work_pattern.json");
 			// sim = YarnBall::buildFromJSON("configs/openwork_trellis_pattern.json");
 		}

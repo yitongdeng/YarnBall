@@ -15,7 +15,7 @@
 		"kStretch": 1e-1,
 		"kBend": 2e-7,
 		"kCollision": 2e-4,
-		"kFriction": 5,
+		"kFriction": 1,
 		"damping": 1e-7,
 
 		// Env
