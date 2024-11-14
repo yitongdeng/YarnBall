@@ -19,8 +19,8 @@ namespace YarnBall {
 		const float fiberFrizz = 0.2f * r;
 		const float fiberTwist = 1200.f;
 
-		const float fuzzDensity = 2e4;
-		const float fuzzLength = 1.4f * r;
+		const float fuzzDensity = 1.25e4;
+		const float fuzzLength = 1.f * r;
 
 		const float fiberRadius = 0.6f * r / sqrt((float)numFibers);
 		const float heightSegLen = 0.3f * r;
@@ -132,16 +132,16 @@ namespace YarnBall {
 				else frame = normalize(mix(frame.v, q[2].v, t - 0.5f));
 
 				vec3 fuzzDir = vec3(randf(prng), randf(prng), randf(prng)) * 2.f - 1.f;
-
-				pos += 0.9f * fiberOrbit * normalize(fuzzDir + vec3(randf(prng), randf(prng), randf(prng)) * 2.f - 1.f);
+				vec3 offset = fuzzDir + vec3(randf(prng), randf(prng), randf(prng)) * 2.f - 1.f;
+				offset.x *= 0.1f;
+				offset = 0.9f * fiberOrbit * normalize(offset);
 				fuzzDir *= fuzzLength * (0.8f + 0.2f * randf(prng));
 
 				for (int hi = 0; hi <= 1; hi++) {
 					float t = hi;
 
 					// Write out a circle in obj format
-					vec3 lPos = t * fuzzDir;
-					vec3 wPos = pos + frame * lPos;
+					vec3 wPos = pos + frame * (t * fuzzDir + offset);
 					fprintf(file, "v %.8f %.8f %.8f\n", wPos.x, wPos.y, wPos.z);
 					numVerts++;
 				}
