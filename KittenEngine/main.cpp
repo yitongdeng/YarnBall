@@ -288,7 +288,7 @@ void initScene(const char* config) {
 			if (config)
 				sim = YarnBall::buildFromJSON(config);
 			else
-				sim = YarnBall::buildFromJSON("./configs/letterG.json");
+				sim = YarnBall::buildFromJSON("./configs/letterS.json");
 			//sim = YarnBall::buildFromJSON("./configs/cable_work_pattern.json");
 			// sim = YarnBall::buildFromJSON("./configs/openwork_trellis_pattern.json");
 		}
