@@ -195,7 +195,7 @@ namespace YarnBall {
 		Kitten::LBVH::aabb bounds();
 
 		void exportFiberMesh(std::string path);
-		void exportToBCC(std::string path);
+		void exportToBCC(std::string path, bool exportAsPolyline = false);
 		void exportToOBJ(std::string path);
 
 		// Glue endpoints with a vertex within the search radius

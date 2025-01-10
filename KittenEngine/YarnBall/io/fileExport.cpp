@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace YarnBall {
-	void Sim::exportToBCC(std::string path) {
+	void Sim::exportToBCC(std::string path, bool exportAsPolyline) {
 		download();
 		FILE* pFile;
 		pFile = fopen(path.c_str(), "wb");
@@ -19,8 +19,14 @@ namespace YarnBall {
 		header.sign[1] = 'C';
 		header.sign[2] = 'C';
 		header.byteCount = 0x44;
-		header.curveType[0] = 'P';
-		header.curveType[1] = 'L';
+		if (exportAsPolyline) {
+			header.curveType[0] = 'P';
+			header.curveType[1] = 'L';
+		}
+		else {
+			header.curveType[0] = 'C';
+			header.curveType[1] = '0';
+		}
 		header.dimensions = 3;
 		header.upDimension = 1;
 

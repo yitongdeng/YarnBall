@@ -134,8 +134,8 @@ void renderScene() {
 
 			static float twirlTime = 0;
 			twirlTime += advTime;
-			sim->verts[sim->meta.numVerts - 1].pos =
-				initialPos[sim->meta.numVerts - 1] - vec3(glm::clamp(0.01f * (twirlTime - 5), 0.f, 0.1f), 0, 0);
+			sim->verts[130].pos =
+				initialPos[130] - vec3(glm::clamp(0.01f * (twirlTime - 5), 0.f, 0.1f), 0, 0);
 			float theta = 1.f * glm::max(twirlTime - 2, 0.f);
 			sim->qs[sim->meta.numVerts - 2] = initialQ[sim->meta.numVerts - 2] * Kit::Rotor(sin(0.5f * theta), 0, 0, cos(0.5f * theta));
 
@@ -247,8 +247,12 @@ void renderGui() {
 		ImGui::Separator();
 		if (ImGui::Button("Export fiber mesh"))
 			sim->exportFiberMesh("./frameFiber.obj");
-		if (ImGui::Button("Export frame"))
+
+		if (ImGui::Button("Export frame obj"))
 			sim->exportToOBJ("./frame.obj");
+		if (ImGui::Button("Export frame bcc"))
+			sim->exportToBCC("./frame.bcc", false);
+
 		if (ImGui::Button("Test perf")) {
 			constexpr float adv = 1.0f;
 			auto s = sim->stepCount();
@@ -288,9 +292,8 @@ void initScene(const char* config) {
 			if (config)
 				sim = YarnBall::buildFromJSON(config);
 			else
-				sim = YarnBall::buildFromJSON("./configs/letterS.json");
-			//sim = YarnBall::buildFromJSON("./configs/cable_work_pattern.json");
-			// sim = YarnBall::buildFromJSON("./configs/openwork_trellis_pattern.json");
+				// sim = YarnBall::buildFromJSON("./configs/letterI.json");
+				sim = YarnBall::buildFromJSON("./configs/cable_work_pattern.json");
 		}
 		catch (const std::exception& e) {
 			printf("Error: %s\n", e.what());
@@ -334,7 +337,7 @@ void initScene(const char* config) {
 		//for (size_t i = 0; i < 32; i++)
 		//	sim->verts[i + 32].pos = vec3(segLen * 12, -4 * segLen, segLen * i - 16 * segLen);
 
-		sim->verts[32].invMass = sim->verts[numVerts - 1].invMass = 0;
+		sim->verts[32].invMass = sim->verts[130].invMass = 0;
 		sim->verts[0].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
 		sim->verts[numVerts - 2].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
 
