@@ -160,8 +160,8 @@ void renderScene() {
 				sim->exportToOBJ("./frames/frame" + to_string(frameID++) + ".obj");
 		}
 
-		if (simSpeedDist.num > 60)
-			simSpeedDist = Kit::Dist();
+		//if (simSpeedDist.num > 60)
+		//	simSpeedDist = Kit::Dist();
 		float ss = advTime / measuredTime;
 		measuredSimSpeed = mix(measuredSimSpeed, ss, 0.1f);
 		simSpeedDist.accu(ss);
