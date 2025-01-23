@@ -57,7 +57,7 @@ namespace YarnBall {
 			int numPoints = seg.y - seg.x + 1;
 			fwrite(&numPoints, sizeof(int), 1, pFile);
 			for (size_t i = seg.x; i <= seg.y; i++)
-				fwrite(&verts[i].pos, sizeof(vec3), numPoints, pFile);
+				fwrite(&verts[i].pos, sizeof(vec3), 1, pFile);
 		}
 
 		fclose(pFile);
