@@ -36,6 +36,9 @@ namespace Resample {
 			if (l0 > r2) {
 				// Figure out exactly where to place this point.
 				l0 = sqrt(l0);
+				dvec2 range(i - step, i);
+				if (range.x > range.y) std::swap(range.x, range.y);
+
 				const double t0 = i;
 				i -= 0.5 * step;	// Take half a step back
 				for (int k = 0; k < 8; k++) {
@@ -43,6 +46,8 @@ namespace Resample {
 					double d = length(x - lastPos);
 					i += (i - t0) * (tarSegLen - d) / (d - l0);
 				}
+
+				i = glm::clamp(i, range.x, range.y);
 
 				ts.push_back(i);
 				lastPos = sampleCurve(cmr, i);
