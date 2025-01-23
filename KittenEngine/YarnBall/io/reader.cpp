@@ -47,7 +47,7 @@ namespace YarnBall {
 		return sim;
 	}
 
-	Sim* readFromBCC(std::string path, float targetSegLen, bool breakUpClosedCurves) {
+	Sim* readFromBCC(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves) {
 		BCCHeader header;
 		FILE* pFile = fopen(path.c_str(), "rb");
 		if (!pFile) throw std::runtime_error("Could not open file");
@@ -79,8 +79,7 @@ namespace YarnBall {
 			vector<vec3> points(numPoints);
 			fread(&points[0], sizeof(vec3), numPoints, pFile);
 
-			// Convert to meters from cm
-			for (auto& p : points) p *= 0.01f;
+			for (auto& p : points) p = vec3(transform * vec4(p, 1));
 
 			if (!isPolyline)	// Resample CMR spline
 				points = Resample::resampleCMR(points, 1, points.size() - 2, targetSegLen);
@@ -98,7 +97,7 @@ namespace YarnBall {
 		return createFromCurves(curves, isCurveClosed, numVerts);
 	}
 
-	Sim* readFromPoly(std::string path, float targetSegLen, bool breakUpClosedCurves) {
+	Sim* readFromPoly(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves) {
 		std::ifstream file(path);
 
 		if (!file.is_open())
@@ -127,7 +126,7 @@ namespace YarnBall {
 				float x, y, z;
 				char colon;
 				if (iss >> id >> colon >> x >> y >> z && colon == ':') {
-					points.push_back(0.01f * vec3(x, y, z));
+					points.push_back(vec3(transform * vec4(x, y, z, 1)));
 					if (id != points.size())
 						throw std::runtime_error("Error parsing .poly. Point id mismatch.");
 				}

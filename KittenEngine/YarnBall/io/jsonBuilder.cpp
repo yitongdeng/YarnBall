@@ -20,12 +20,22 @@ namespace YarnBall {
 		Sim* sim = nullptr;
 
 		auto dataPath = root["curveFile"].asString();
+		mat4 transform(1);
+		transform[0][0] = transform[1][1] = transform[2][2] = 0.01f;
+
+		if (!root["transform"].isNull()) {
+			auto t = root["transform"];
+			for (int i = 0; i < 3; i++)
+				for (int j = 0; j < 4; j++)
+					transform[j][i] = t[i][j].asFloat();
+		}
+
 		// If ends with .poly
 		if (dataPath.size() > 5 && dataPath.substr(dataPath.size() - 5) == ".poly")
-			sim = readFromPoly(dataPath, root["resampleLength"].asFloat(),
+			sim = readFromPoly(dataPath, root["resampleLength"].asFloat(), transform,
 				root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool());
 		else
-			sim = readFromBCC(dataPath, root["resampleLength"].asFloat(),
+			sim = readFromBCC(dataPath, root["resampleLength"].asFloat(), transform,
 				root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool());
 
 		if (!root["curveRadius"].isNull()) {

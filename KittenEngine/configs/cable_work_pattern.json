@@ -4,6 +4,9 @@
 	"curveRadius": 0.0015,
 	"glueEndpoints": 0.01,
 	"fixBorders": [0, 0, 0.01, 0.01, 0, 0],
+	"transform": [[0.01,    0,    0,  0], 
+				  [   0, 0.01,    0,  0],
+				  [   0,    0, 0.01,  0]],
 
 	"simulation": {
 		// Material
