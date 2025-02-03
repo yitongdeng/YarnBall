@@ -212,10 +212,6 @@ void renderGui() {
 			sim->printCollisionStats();
 		if (ImGui::Button("Zero velocity"))
 			sim->zeroVelocities();
-		if (ImGui::Button("Test deform"))
-			sim->testMotionDeform();
-		if (ImGui::Button("Disable motion fitting"))
-			sim->meta.useMotionFitting = false;
 		ImGui::Separator();
 		ImGui::TreePop();
 	}

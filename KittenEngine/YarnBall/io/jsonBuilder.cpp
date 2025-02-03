@@ -85,8 +85,6 @@ namespace YarnBall {
 				sim->meta.detectionScaler = simRoot["detectionScaler"].asFloat();
 			if (!simRoot["stepLimit"].isNull())
 				sim->meta.useStepSizeLimit = simRoot["stepLimit"].asBool() ? 1 : 0;
-			if (!simRoot["motionFitting"].isNull())
-				sim->meta.useMotionFitting = simRoot["motionFitting"].asBool() ? 1 : 0;
 		}
 
 		sim->configure(density);

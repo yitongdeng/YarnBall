@@ -58,11 +58,6 @@ namespace YarnBall {
 	} Vertex;
 
 	typedef struct {
-		vec4 rhs[3];
-		Kit::hess4 outerSum;
-	} LinearMotionSum;
-
-	typedef struct {
 		Vertex* d_verts;		// Device vertex array pointer
 		Kit::Rotor* d_qs;
 		vec4* d_qRests;
@@ -76,13 +71,10 @@ namespace YarnBall {
 		int* d_lastCID;			// Last cid. Temp storage to speed up memory access.
 
 		int* d_numCols;					// Number of collisions for each segment
-		vec3* d_maxStepCenter;			// Max step sphere center
 		float* d_maxStepSize;			// Max step size for the segment
-		vec3* d_colCenter;			// Max step sphere center
 		int* d_collisions;				// Collisions IDs stored as the other segment index.
 		Kit::LBVH::aabb* d_bounds;		// AABBs
 		ivec2* d_boundColList;			// Colliding segment AABB IDs. 
-		LinearMotionSum* d_motions;		// Motions used for averaging.
 
 		vec3 gravity;			// Gravity
 		int numItr;				// Number of iterations used per time step
@@ -109,18 +101,13 @@ namespace YarnBall {
 		float barrierThickness;	// Collision energy barrier thickness. This is the barrier between yarns.
 		float detectionScaler;	// The extra room needed for a close by potential collision to be added as a ratio
 
-		// Average best fit linear motion (position delta) as Mx+c
-		// Do not set manually.
-		mat3 linearMotionMatrix;
-		vec3 linearMotionVector;
-
 		float bvhRebuildPeriod;	// The time in between rebuilding the BVH.
 		int detectionPeriod;	// The number of steps in between to perform collision detection. -1 to turn off collisions
 
-		float maxSegLen;		// Largest segment length
-		float minSegLen;		// Largest segment length
-		int useStepSizeLimit;	// Whether to use the step size limit
-		int useMotionFitting;	// Whether to use motion fitting in step limit centering.
+		float maxSegLen;			// Largest segment length
+		float minSegLen;			// Largest segment length
+		int useStepSizeLimit;		// Whether to use the step size limit
+		int useVelocityRadius;		// Whether to add velocity onto the collision radius
 	} MetaData;
 
 	class Sim {
@@ -201,8 +188,6 @@ namespace YarnBall {
 		// Glue endpoints with a vertex within the search radius
 		void glueEndpoints(float searchRadius);
 
-		void testMotionDeform();
-
 	private:
 		void uploadMeta();
 
@@ -211,7 +196,6 @@ namespace YarnBall {
 		void detectCollisions();
 		void iterateCosserat();
 		void iterateSpring();
-		void transferMotion();
 		void recomputeStepLimit();
 		void checkErrors();
 

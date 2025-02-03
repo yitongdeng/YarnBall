@@ -4,7 +4,6 @@
 
 namespace YarnBall {
 	// Converts velocity to initial guess
-	template<bool motionFitting>
 	__global__ void initItr(MetaData* data) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		if (tid >= data->numVerts) return;
@@ -50,27 +49,10 @@ namespace YarnBall {
 		// Transfer segment data
 		vec3 pos = verts[tid].pos;
 		data->d_lastPos[tid] = pos;
-
-		// Perform motion fitting
-		if (motionFitting) {
-			LinearMotionSum sum;
-			for (int i = 0; i < 3; i++)
-				sum.rhs[i] = vec4(pos, 1) * dx[i];
-			sum.outerSum = Kit::hess4::outer(vec4(pos, 1));
-			data->d_motions[tid] = sum;
-		}
 	}
 
 	void Sim::startIterate() {
-		if (meta.useMotionFitting) {
-			initItr <true> << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
-			transferMotion();
-		}
-		else {
-			initItr <false> << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
-			meta.linearMotionMatrix = mat3(0);
-			meta.linearMotionVector = vec3(0);
-		}
+		initItr<< <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
 	}
 
 	// Converts dx back to velocity and advects

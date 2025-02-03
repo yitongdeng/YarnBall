@@ -153,11 +153,8 @@ namespace YarnBall {
 			vec3 delta = data->accelerationRatio * (inverse((mat3)H) * f);
 			dx += delta;
 
-			vec3 center = data->d_maxStepCenter[tid];
-			dx -= center;
 			float l = length(dx);
 			if (l > stepLimit && l > 0) dx *= stepLimit / l;
-			dx += center;
 
 			// Apply update
 			dxs[tid] = dx;
@@ -210,90 +207,8 @@ namespace YarnBall {
 		}
 	}
 
-	__device__ inline mat4 leftQMulMatrix(Kit::Rotor q) {
-		return mat4(
-			q.w, q.v.z, -q.v.y, -q.v.x,
-			-q.v.z, q.w, q.v.x, -q.v.y,
-			q.v.y, -q.v.x, q.w, -q.v.z,
-			q.v.x, q.v.y, q.v.z, q.v.w
-		);
-	}
-
-	__device__ inline mat4 rightQMulMatrix(Kit::Rotor q) {
-		return mat4(
-			q.w, -q.v.z, q.v.y, -q.v.x,
-			q.v.z, q.w, -q.v.x, -q.v.y,
-			-q.v.y, q.v.x, q.w, -q.v.z,
-			q.v.x, q.v.y, q.v.z, q.v.w
-		);
-	}
-
-	__global__ void quaternionEulerItr(MetaData* data) {
-		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
-		const int numVerts = data->numVerts;
-		if (tid >= numVerts || tid < 0) return;
-
-		const auto verts = data->d_verts;
-		const auto dxs = data->d_dx;
-
-		// Linear change
-		Vertex v0 = verts[tid];
-
-		// Update segment orientation
-		// This is done assuming some very very large invMoment (i.e. no inertia so static equilibrium)
-		if (!(bool)(v0.flags & (uint32_t)VertexFlags::fixOrientation) != 0 && (v0.flags & (uint32_t)VertexFlags::hasNext)) {
-			vec3 dx = dxs[tid];
-			vec3 p1 = verts[tid + 1].pos;
-			vec3 p1dx = dxs[tid + 1];
-
-			auto qs = data->d_qs;
-			auto q0 = qs[tid];
-
-			vec3 cs = ((p1 - v0.pos) + (p1dx - dx)) / v0.lRest - q0 * vec3(1, 0, 0);
-			vec4 r = (Kit::Rotor(2 * v0.kStretch * cs) * q0 * Kit::Rotor(1)).v;
-
-			mat4x3 H43 = rightQMulMatrix(Kit::Rotor(1) * q0.inverse());
-			mat4 H = (4.f * v0.kStretch) * (transpose(H43) * H43)
-				+ leftQMulMatrix(Kit::Rotor(2 * v0.kStretch * cs)) * rightQMulMatrix(Kit::Rotor(1));
-
-			auto qRests = data->d_qRests;
-			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
-				auto qRest = qRests[tid - 1];
-				auto qq = qs[tid - 1];
-
-				float s = dot((qq.inverse() * q0).v, qRest) > 0 ? 1 : -1;
-				r -= s * (qq * Kit::Rotor(qRest)).v;
-				float k = length(qRest);
-				H[0][0] += k; H[1][1] += k; H[2][2] += k; H[3][3] += k;
-			}
-
-			if (v0.flags & (uint32_t)VertexFlags::hasNextOrientation) {
-				auto qRest = qRests[tid];
-				auto qq = qs[tid + 1];
-
-				float s = dot((q0.inverse() * qq).v, qRest) > 0 ? 1 : -1;
-				r -= s * (qq * Kit::Rotor(qRest).inverse()).v;
-				float k = length(qRest);
-				H[0][0] += k; H[1][1] += k; H[2][2] += k; H[3][3] += k;
-			}
-
-			vec4 d;
-			if (true) {
-				r -= dot(q0.v, r) * q0.v;
-				auto AtAInv = inverse(transpose(H) * H);
-				float lambda = dot(q0.v, AtAInv * (-r * H)) / dot(q0.v, AtAInv * q0.v);
-				d = AtAInv * (-r * H - q0.v * lambda);
-			}
-			else d = -(inverse(H) * r);
-
-			q0 = normalize(Kit::Rotor(q0.v + d));
-			qs[tid] = q0;
-		}
-	}
-
 	void Sim::iterateCosserat() {
 		cosseratItr << <(meta.numVerts + BLOCK_SIZE - 2) / (BLOCK_SIZE - 1), BLOCK_SIZE, 0, stream >> > (d_meta);
 		quaternionLambdaItr << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
-		// quaternionEulerItr << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
 	}
 }

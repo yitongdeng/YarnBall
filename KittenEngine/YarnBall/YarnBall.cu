@@ -24,10 +24,10 @@ namespace YarnBall {
 		meta.kFriction = 5.f;
 		meta.time = 0.f;
 		meta.detectionPeriod = 1;
-		meta.useStepSizeLimit = 1;
+		meta.useStepSizeLimit = true;
+		meta.useVelocityRadius = true;
 		meta.bvhRebuildPeriod = 1 / 60.f;
 		meta.numItr = 8;
-		meta.useMotionFitting = false;
 
 		// Initialize vertices
 		verts = new Vertex[numVerts];
@@ -61,15 +61,12 @@ namespace YarnBall {
 			cudaFree(meta.d_dx);
 			cudaFree(meta.d_vels);
 			cudaFree(meta.d_qRests);
-			cudaFree(meta.d_motions);
 
 			cudaFree(meta.d_lastVels);
 			cudaFree(meta.d_lastPos);
 			cudaFree(meta.d_lastFlags);
 			cudaFree(meta.d_lastCID);
 			cudaFree(meta.d_numCols);
-			cudaFree(meta.d_maxStepCenter);
-			cudaFree(meta.d_colCenter);
 			cudaFree(meta.d_maxStepSize);
 			cudaFree(meta.d_collisions);
 			cudaFree(meta.d_bounds);
@@ -174,15 +171,12 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_lastCID, sizeof(int) * numVerts);
 		cudaMalloc(&meta.d_lastFlags, sizeof(int) * numVerts);
 
-		cudaMalloc(&meta.d_maxStepCenter, sizeof(vec3) * numVerts);
-		cudaMalloc(&meta.d_colCenter, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_maxStepSize, sizeof(float) * numVerts);
 		cudaMalloc(&meta.d_numCols, sizeof(int) * numVerts);
 		cudaMemset(meta.d_numCols, 0, sizeof(int) * meta.numVerts);
 		cudaMalloc(&meta.d_collisions, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 		cudaMalloc(&meta.d_bounds, sizeof(Kit::LBVH::aabb) * numVerts);
 		cudaMalloc(&meta.d_boundColList, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
-		cudaMalloc(&meta.d_motions, sizeof(LinearMotionSum) * numVerts);
 
 		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
 		qBuffer = new Kitten::CudaComputeBuffer(sizeof(Kit::Rotor), numVerts);

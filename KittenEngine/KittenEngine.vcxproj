@@ -215,9 +215,6 @@
     <CudaCompile Include="YarnBall\sim\collision.cu">
       <FileType>CppCode</FileType>
     </CudaCompile>
-    <CudaCompile Include="YarnBall\sim\motionFitting.cu">
-      <FileType>CppCode</FileType>
-    </CudaCompile>
     <ClCompile Include="YarnBall\sim\statistics.cpp" />
     <ClCompile Include="YarnBall\sim\step.cpp" />
     <CudaCompile Include="YarnBall\YarnBall.cu">

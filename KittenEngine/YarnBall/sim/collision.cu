@@ -7,7 +7,7 @@
 #include "../YarnBall.h"
 
 namespace YarnBall {
-	__global__ void buildAABBs(MetaData* data, mat3 lmMat, vec3 lmVec, int* errorReturn) {
+	__global__ void buildAABBs(MetaData* data, int* errorReturn) {
 		const int tid = threadIdx.x + blockIdx.x * blockDim.x;
 		if (tid >= data->numVerts) return;
 
@@ -16,15 +16,8 @@ namespace YarnBall {
 		Kit::LBVH::aabb aabb;
 
 		auto p0 = verts[tid];
-		vec3 dx = lmMat * p0 + lmVec;
-		data->d_maxStepCenter[tid] = dx;
-
-		p0 += dx;
-		data->d_colCenter[tid] = p0 + dx;
-
 		if (flags & (uint32_t)VertexFlags::hasNext) {
 			auto p1 = verts[tid + 1];
-			p1 += lmMat * p1 + lmVec;
 
 			aabb.absorb(p0);
 			aabb.absorb(p1);
@@ -50,7 +43,7 @@ namespace YarnBall {
 		// Exempt neighboring segments
 		if (abs(ids.y - ids.x) <= 2) return;
 
-		auto verts = data->d_colCenter;
+		auto verts = data->d_lastPos;
 		vec3 a0 = verts[ids.x];
 		vec3 a1 = verts[ids.x + 1] - a0;
 		vec3 b0 = verts[ids.y] - a0;
@@ -90,7 +83,7 @@ namespace YarnBall {
 
 	void Sim::detectCollisions() {
 		// Rebuild bvh
-		buildAABBs << <(meta.numVerts + 255) / 256, 256 >> > (d_meta, meta.linearMotionMatrix, meta.linearMotionVector, d_error);
+		buildAABBs << <(meta.numVerts + 255) / 256, 256 >> > (d_meta, d_error);
 		if (lastBVHRebuild >= meta.bvhRebuildPeriod) {
 			bvh.compute(meta.d_bounds, meta.numVerts);
 			lastBVHRebuild = 0;
@@ -119,11 +112,11 @@ namespace YarnBall {
 			constexpr float SAFETY_MARGIN = 0.2f;
 
 			// Linear change
-			const auto verts = data->d_colCenter;
+			const auto verts = data->d_lastPos;
 			vec3 a0 = verts[tid];
 			vec3 a1 = verts[tid + 1] - a0;
 
-			// This is the maximum distance possible within with the AABB query is guaranteed to find a collision
+			// This is the maximum move possible where the AABB query is still guaranteed to find the collision
 			minDist = data->detectionRadius * (data->detectionScaler - 1);
 
 			// Collision energy of this segment
