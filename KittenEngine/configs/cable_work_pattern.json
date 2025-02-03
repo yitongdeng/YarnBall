@@ -26,8 +26,8 @@
 		"maxTimeStep": 3e-4,
 		"numIterations": 4,
 		"detectionPeriod": 4,
-		"detectionScaler": 1.4,
+		"detectionScaler": 1.1,
 		"stepLimit": true,
-		"motionFitting": false
+		"velStepLimit": true,
 	},
 }

@@ -20,6 +20,8 @@
 		"maxTimeStep": 2e-4,
 		"numIterations": 4,
 		"detectionPeriod": 2,
-		"detectionScaler": 1.5
+		"detectionScaler": 1.1,
+		"stepLimit": true,
+		"velStepLimit": true,
 	},
 }

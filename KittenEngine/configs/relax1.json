@@ -26,7 +26,6 @@
 		"numIterations": 4,
 		"detectionPeriod": 1,
 		"detectionScaler": 1.4,
-		"stepLimit": true,
-		"motionFitting": false
+		"stepLimit": true
 	},
 }
