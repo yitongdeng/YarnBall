@@ -23,7 +23,7 @@
 		"drag": 0.2,
 
 		// Solver
-		"maxTimeStep": 3e-4,
+		"maxTimeStep": 0.00035,
 		"numIterations": 4,
 		"detectionPeriod": 4,
 		"detectionScaler": 1.1,
