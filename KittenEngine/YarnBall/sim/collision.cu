@@ -22,13 +22,15 @@ namespace YarnBall {
 
 			aabb.absorb(p0);
 			aabb.absorb(p1);
-
+			
+			float padding = data->scaledDetectionRadius;
 			if (USE_VEL_RADIUS) {
 				auto dxs = data->d_dx;
-				aabb.absorb(p0 + dxs[tid]);
-				aabb.absorb(p1 + dxs[tid + 1]);
+				// Step limit is always centered on the current frame position
+				// So we expand our query radius to cover any expected movement
+				padding += sqrt(max(length2(dxs[tid]), length2(dxs[tid + 1])));
 			}
-			aabb.pad(data->scaledDetectionRadius);
+			aabb.pad(padding);
 		}
 
 		data->d_bounds[tid] = aabb;
@@ -139,7 +141,7 @@ namespace YarnBall {
 
 			// This is the maximum move possible where the AABB query is still guaranteed to find the collision
 			minDist = data->detectionRadius * (data->detectionScaler - 1);
-			if (USE_VEL_RADIUS) 
+			if (USE_VEL_RADIUS)
 				minDist += length(data->d_dx[tid]);
 
 			// Collision energy of this segment
