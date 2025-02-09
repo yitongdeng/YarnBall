@@ -13,6 +13,7 @@ namespace YarnBall {
 		meta.h = maxH;
 		meta.drag = 0.2;
 		meta.damping = 1e-6;
+		meta.time = 0.f;
 
 		meta.radius = 1e-4;
 		meta.barrierThickness = 8e-4;
@@ -22,11 +23,12 @@ namespace YarnBall {
 		meta.detectionScaler = 1.2f;
 		meta.frictionCoeff = 0.1f;
 		meta.kFriction = 5.f;
-		meta.time = 0.f;
+
+
 		meta.detectionPeriod = 1;
 		meta.useStepSizeLimit = true;
 		meta.useVelocityRadius = true;
-		meta.bvhRebuildPeriod = 1 / 60.f;
+		meta.bvhRebuildPeriod = 1 / 10.f;	// Really only need to rebuild every 100ms
 		meta.numItr = 8;
 
 		// Initialize vertices

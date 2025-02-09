@@ -206,9 +206,6 @@
     <CudaCompile Include="YarnBall\sim\iteration.cu">
       <FileType>CppCode</FileType>
     </CudaCompile>
-    <CudaCompile Include="YarnBall\sim\spring.cu">
-      <FileType>CppCode</FileType>
-    </CudaCompile>
     <CudaCompile Include="YarnBall\sim\cosserat.cu">
       <FileType>CppCode</FileType>
     </CudaCompile>

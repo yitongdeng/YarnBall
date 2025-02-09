@@ -195,7 +195,6 @@ namespace YarnBall {
 		void endIterate();
 		void detectCollisions();
 		void iterateCosserat();
-		void iterateSpring();
 		void recomputeStepLimit();
 		void checkErrors();
 

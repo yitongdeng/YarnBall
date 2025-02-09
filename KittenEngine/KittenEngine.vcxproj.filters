@@ -264,9 +264,6 @@
     <CudaCompile Include="YarnBall\sim\iteration.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
-    <CudaCompile Include="YarnBall\sim\spring.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
     <CudaCompile Include="YarnBall\sim\cosserat.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>

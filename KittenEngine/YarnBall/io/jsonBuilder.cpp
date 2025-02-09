@@ -87,6 +87,8 @@ namespace YarnBall {
 				sim->meta.useStepSizeLimit = simRoot["stepLimit"].asBool() ? 1 : 0;
 			if (!simRoot["velStepLimit"].isNull())
 				sim->meta.useVelocityRadius = simRoot["velStepLimit"].asBool() ? 1 : 0;
+			if (!simRoot["bvhRebuildPeriod"].isNull())
+				sim->meta.bvhRebuildPeriod = simRoot["bvhRebuildPeriod"].asFloat();
 		}
 
 		sim->configure(density);
