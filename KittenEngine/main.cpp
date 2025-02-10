@@ -69,8 +69,8 @@ void renderScene() {
 					if (twistTime > end + 3.0f) vert.invMass = sim->initialInvMasses[i];
 				}
 			}
-
-			if (twistTime > end + 8.f) {
+			 
+			if (twistTime > end + 11.f) {
 				exportSim = false;
 				scenarioTwist = false;
 				simulate = false;
@@ -148,10 +148,10 @@ void renderScene() {
 
 		if (exportSim) {
 			static int frameID = 0;
-			if (frameID == 299) {
-				exportSim = false;
-				simulate = false;
-			}
+			//if (frameID == 299) {
+			//	exportSim = false;
+			//	simulate = false;
+			//}
 			if (exportFiberLevel) {
 				printf("Exporting fiber frame %d\n", frameID);
 				sim->exportFiberMesh("./frames/frame" + to_string(frameID++) + ".obj");
