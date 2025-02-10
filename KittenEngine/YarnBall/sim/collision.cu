@@ -62,8 +62,6 @@ namespace YarnBall {
 		// Discrete collision detection
 
 		vec2 uv = Kit::segmentClosestPoints(vec3(0), a1, b0, b1);
-		if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
-			uv = vec2(0.5);
 
 		// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
 		vec3 normal = uv.x * a1 - mix(b0, b1, uv.y);
@@ -154,8 +152,6 @@ namespace YarnBall {
 
 				// Recompute contact data
 				vec2 uv = Kit::segmentClosestPoints(vec3(0), a1, b0, b1);
-				if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
-					uv = vec2(0.5);
 
 				// Remove duplicate collisions if there is a previous segment and the collision happens on the lower corner
 				vec3 normal = uv.x * a1 - mix(b0, b1, uv.y);

@@ -82,8 +82,6 @@ namespace YarnBall {
 				vec2 uv = Kit::segmentClosestPoints(
 					vec3(0), (p1 - v0.pos) + (p1dx - dx),
 					(b0 - v0.pos) + (db0 - dx), (b1 - v0.pos) + (db1 - dx));
-				if (!glm::isfinite(uv.x) || !glm::isfinite(uv.y))
-					uv = vec2(0.5);
 
 				vec3 dpos = mix(v0.pos, p1, uv.x) - mix(b0, b1, uv.y);
 				vec3 ddpos = mix(dx, p1dx, uv.x) - mix(db0, db1, uv.y);
