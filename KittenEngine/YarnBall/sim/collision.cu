@@ -130,7 +130,7 @@ namespace YarnBall {
 
 		float minDist = INFINITY;
 		if (LIMIT && (bool)(data->d_lastFlags[tid] & (uint32_t)VertexFlags::hasNext)) {
-			constexpr float SAFETY_MARGIN = 0.2f;
+			constexpr float SAFETY_MARGIN = 0.1f;
 
 			// Linear change
 			const auto verts = data->d_lastPos;
