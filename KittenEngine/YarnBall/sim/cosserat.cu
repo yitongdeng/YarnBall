@@ -5,9 +5,20 @@
 namespace YarnBall {
 	using Kit::hess3;
 
+	// The main Cosserat iteration is split into sectors because we are compute bound when computing collisions
+	// The whole block is divided into THREADS_PER_VERTEX sectors. 
+	// Each sector computes a portion of the collision energy and this is summed up into sector 0
+	// Sector 0 then performs the actual update
+
 #define BLOCK_SIZE (256)
+#define THREADS_PER_VERTEX (2)
+#define VERTEX_PER_BLOCK (BLOCK_SIZE / THREADS_PER_VERTEX)
+
 	__global__ void cosseratItr(MetaData* data) {
-		const int tid = (int)(blockIdx.x * (BLOCK_SIZE - 1) + threadIdx.x) - 1;
+		const int sid = threadIdx.x / VERTEX_PER_BLOCK;			// Sector id
+		const int ltid = threadIdx.x - sid * VERTEX_PER_BLOCK;	// Local tid
+		const int tid = (int)(blockIdx.x * (VERTEX_PER_BLOCK - 1) + ltid) - 1;	// Thread id
+
 		const int numVerts = data->numVerts;
 		if (tid >= numVerts || tid < 0) return;
 
@@ -18,20 +29,25 @@ namespace YarnBall {
 
 		// Linear change
 		Vertex v0 = verts[tid];
-
-		// Hessian H
-		hess3 H = hess3(1 / (v0.invMass * h * h));
-		// vel has been overwritten to contain y - pos
 		vec3 dx = dxs[tid];
-		vec3 f = 1 / (h * h * v0.invMass) * (data->d_vels[tid] - dx);
 
-		// Special connections energy
-		if (v0.connectionIndex >= 0) {
-			constexpr float stiffness = 4e1;
-			vec3 p0 = verts[v0.connectionIndex].pos;
-			vec3 p0dx = dxs[v0.connectionIndex];
-			f -= stiffness * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
-			H.diag += stiffness * (1 + damping);
+		// First couple of warps are used to compute the needed energies. 
+		hess3 H(0);
+		vec3 f(0);
+		if (sid == 0) {
+			// Hessian H
+			H = hess3(1 / (v0.invMass * h * h));
+			// vel has been overwritten to contain y - pos
+			f = 1 / (h * h * v0.invMass) * (data->d_vels[tid] - dx);
+
+			// Special connections energy
+			if (v0.connectionIndex >= 0) {
+				constexpr float stiffness = 4e1;
+				vec3 p0 = verts[v0.connectionIndex].pos;
+				vec3 p0dx = dxs[v0.connectionIndex];
+				f -= stiffness * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
+				H.diag += stiffness * (1 + damping);
+			}
 		}
 
 		// We need to store absolute position and position updates seperatly for floating point precision
@@ -44,10 +60,11 @@ namespace YarnBall {
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
 			p1 = verts[tid + 1].pos;
 			p1dx = dxs[tid + 1];
-			stepLimit = data->d_maxStepSize[tid];
 
 			// Cosserat stretching energy
-			{
+			if (sid == 0) {
+				stepLimit = data->d_maxStepSize[tid];
+
 				float invl = 1 / v0.lRest;
 				vec3 c = ((p1 - v0.pos) + (p1dx - dx)) * invl - data->d_qs[tid] * vec3(1, 0, 0);
 
@@ -70,7 +87,7 @@ namespace YarnBall {
 			// Collision energy of this segment
 			const int numCols = data->d_numCols[tid];
 			const auto lastPos = data->d_lastPos;
-			for (int i = 0; i < numCols; i++) {
+			for (int i = sid; i < numCols; i += THREADS_PER_VERTEX) {
 				int colID = collisions[tid + i * numVerts];
 
 				vec3 b0 = lastPos[colID];
@@ -129,33 +146,63 @@ namespace YarnBall {
 			}
 		}
 
-		__shared__ vec4 forces[BLOCK_SIZE];
-		__shared__ hess3 hessians[BLOCK_SIZE];
-		forces[threadIdx.x] = vec4(f2, stepLimit);
-		hessians[threadIdx.x] = H2;
+		__shared__ float sharedData[18 * VERTEX_PER_BLOCK];
 
-		__syncthreads();
+		// Reduce forces to the lower threads
+		vec3* f0s = (vec3*)sharedData;
+		vec3* f1s = (vec3*)(sharedData + 3 * VERTEX_PER_BLOCK);
+		hess3* h0s = (hess3*)(sharedData + 6 * VERTEX_PER_BLOCK);
+		hess3* h1s = (hess3*)(sharedData + 12 * VERTEX_PER_BLOCK);
 
-		// No reason to keep thread 0 going anymore
-		if (!threadIdx.x) return;
+		for (int i = 1; i < THREADS_PER_VERTEX; i++) {
+			if (sid == i) {
+				f0s[ltid] = f;
+				f1s[ltid] = f2;
+				h0s[ltid] = H;
+				h1s[ltid] = H2;
+			}
+			__syncthreads();
 
-		if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
-			vec4 v = forces[threadIdx.x - 1];
-			stepLimit = min(stepLimit, v.w);
-			f += vec3(v);
-			H += hessians[threadIdx.x - 1];
+			if (sid == 0) {
+				f += f0s[ltid];
+				f2 += f1s[ltid];
+				H += h0s[ltid];
+				H2 += h1s[ltid];
+			}
+			__syncthreads();
 		}
 
-		if (v0.invMass != 0) {
-			// Local solve
-			vec3 delta = data->accelerationRatio * (inverse((mat3)H) * f);
-			dx += delta;
+		// Sum forces across the yarn segments
+		if (sid == 0) {
+			vec4* forces = (vec4*)sharedData;
+			hess3* hessians = (hess3*)(sharedData + 4 * VERTEX_PER_BLOCK);
 
-			float l = length(dx);
-			if (l > stepLimit && l > 0) dx *= stepLimit / l;
+			forces[threadIdx.x] = vec4(f2, stepLimit);
+			hessians[threadIdx.x] = H2;
 
-			// Apply update
-			dxs[tid] = dx;
+			__syncthreads();
+
+			// No reason to keep thread 0 going anymore
+			if (!threadIdx.x) return;
+
+			if (v0.flags & (uint32_t)VertexFlags::hasPrev) {
+				vec4 v = forces[threadIdx.x - 1];
+				stepLimit = min(stepLimit, v.w);
+				f += vec3(v);
+				H += hessians[threadIdx.x - 1];
+			}
+
+			if (v0.invMass != 0) {
+				// Local solve
+				vec3 delta = data->accelerationRatio * (inverse((mat3)H) * f);
+				dx += delta;
+
+				float l = length(dx);
+				if (l > stepLimit && l > 0) dx *= stepLimit / l;
+
+				// Apply update
+				dxs[tid] = dx;
+			}
 		}
 	}
 
@@ -206,7 +253,7 @@ namespace YarnBall {
 	}
 
 	void Sim::iterateCosserat() {
-		cosseratItr << <(meta.numVerts + BLOCK_SIZE - 2) / (BLOCK_SIZE - 1), BLOCK_SIZE, 0, stream >> > (d_meta);
+		cosseratItr << <(meta.numVerts + VERTEX_PER_BLOCK - 2) / (VERTEX_PER_BLOCK - 1), BLOCK_SIZE, 0, stream >> > (d_meta);
 		quaternionLambdaItr << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
 	}
 }
