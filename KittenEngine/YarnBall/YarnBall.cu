@@ -182,8 +182,10 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_bounds, sizeof(Kit::LBVH::aabb) * numVerts);
 		cudaMalloc(&meta.d_boundColList, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
-		vertBuffer = new Kitten::ComputeBuffer(sizeof(Vertex), numVerts);
-		qBuffer = new Kitten::ComputeBuffer(sizeof(Kit::Rotor), numVerts);
+		if (glGetStringi) {
+			vertBuffer = new Kitten::ComputeBuffer(sizeof(Vertex), numVerts);
+			qBuffer = new Kitten::ComputeBuffer(sizeof(Kit::Rotor), numVerts);
+		}
 
 		cudaDeviceSynchronize();
 		cudaStreamCreate(&stream);
