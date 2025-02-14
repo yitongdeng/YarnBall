@@ -34,7 +34,7 @@ namespace YarnBall {
 		// First couple of warps are used to compute the needed energies. 
 		hess3 H(0);
 		vec3 f(0);
-		if (sid == 0) {
+		if (!sid) {
 			// Hessian H
 			H = hess3(1 / (v0.invMass * h * h));
 			// vel has been overwritten to contain y - pos
@@ -62,7 +62,7 @@ namespace YarnBall {
 			p1dx = dxs[tid + 1];
 
 			// Cosserat stretching energy
-			if (sid == 0) {
+			if (!sid) {
 				stepLimit = data->d_maxStepSize[tid];
 
 				float invl = 1 / v0.lRest;
@@ -154,26 +154,24 @@ namespace YarnBall {
 		hess3* h0s = (hess3*)(sharedData + 6 * VERTEX_PER_BLOCK);
 		hess3* h1s = (hess3*)(sharedData + 12 * VERTEX_PER_BLOCK);
 
-		for (int i = 1; i < THREADS_PER_VERTEX; i++) {
-			if (sid == i) {
-				f0s[ltid] = f;
-				f1s[ltid] = f2;
-				h0s[ltid] = H;
-				h1s[ltid] = H2;
-			}
-			__syncthreads();
-
-			if (sid == 0) {
-				f += f0s[ltid];
-				f2 += f1s[ltid];
-				H += h0s[ltid];
-				H2 += h1s[ltid];
-			}
-			__syncthreads();
+		if (sid) {
+			f0s[ltid] = f;
+			f1s[ltid] = f2;
+			h0s[ltid] = H;
+			h1s[ltid] = H2;
 		}
+		__syncthreads();
+
+		if (!sid) {
+			f += f0s[ltid];
+			f2 += f1s[ltid];
+			H += h0s[ltid];
+			H2 += h1s[ltid];
+		}
+		__syncthreads();
 
 		// Sum forces across the yarn segments
-		if (sid == 0) {
+		if (!sid) {
 			vec4* forces = (vec4*)sharedData;
 			hess3* hessians = (hess3*)(sharedData + 4 * VERTEX_PER_BLOCK);
 
