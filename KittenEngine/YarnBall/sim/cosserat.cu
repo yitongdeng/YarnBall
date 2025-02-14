@@ -252,6 +252,6 @@ namespace YarnBall {
 
 	void Sim::iterateCosserat() {
 		cosseratItr << <(meta.numVerts + VERTEX_PER_BLOCK - 2) / (VERTEX_PER_BLOCK - 1), BLOCK_SIZE, 0, stream >> > (d_meta);
-		quaternionLambdaItr << <(meta.numVerts + 255) / 256, 256, 0, stream >> > (d_meta);
+		quaternionLambdaItr << <(meta.numVerts + 127) / 128, 128, 0, stream >> > (d_meta);
 	}
 }
