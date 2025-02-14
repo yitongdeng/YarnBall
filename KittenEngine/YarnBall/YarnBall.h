@@ -147,8 +147,8 @@ namespace YarnBall {
 		// GL stuff
 		Kitten::Mesh* cylMesh = nullptr;
 		Kitten::Mesh* cylMeshHiRes = nullptr;
-		Kitten::CudaComputeBuffer* vertBuffer = nullptr;
-		Kitten::CudaComputeBuffer* qBuffer = nullptr;
+		Kitten::ComputeBuffer* vertBuffer = nullptr;
+		Kitten::ComputeBuffer* qBuffer = nullptr;
 
 		cudaStream_t stream = nullptr;
 		cudaGraphExec_t stepGraph = nullptr;
@@ -165,6 +165,7 @@ namespace YarnBall {
 		void setKStretch(float k = 1e-2);
 
 		// Rendering
+		void startRender();
 		void render();
 		void renderShadows();
 

@@ -165,6 +165,8 @@ namespace YarnBall {
 
 		cudaMalloc(&meta.d_dx, sizeof(vec3) * numVerts);
 
+		cudaMalloc(&meta.d_verts, sizeof(Vertex) * numVerts);
+		cudaMalloc(&meta.d_qs, sizeof(Kit::Rotor) * numVerts);
 		cudaMalloc(&meta.d_lastVels, sizeof(vec3) * numVerts);
 		cudaMemset(meta.d_lastVels, 0, sizeof(vec3) * numVerts);
 		cudaMalloc(&meta.d_vels, sizeof(vec3) * numVerts);
@@ -180,10 +182,8 @@ namespace YarnBall {
 		cudaMalloc(&meta.d_bounds, sizeof(Kit::LBVH::aabb) * numVerts);
 		cudaMalloc(&meta.d_boundColList, sizeof(int) * numVerts * MAX_COLLISIONS_PER_SEGMENT);
 
-		vertBuffer = new Kitten::CudaComputeBuffer(sizeof(Vertex), numVerts);
-		qBuffer = new Kitten::CudaComputeBuffer(sizeof(Kit::Rotor), numVerts);
-		meta.d_verts = (Vertex*)vertBuffer->cudaPtr;
-		meta.d_qs = (Kit::Rotor*)qBuffer->cudaPtr;
+		vertBuffer = new Kitten::ComputeBuffer(sizeof(Vertex), numVerts);
+		qBuffer = new Kitten::ComputeBuffer(sizeof(Kit::Rotor), numVerts);
 
 		cudaDeviceSynchronize();
 		cudaStreamCreate(&stream);

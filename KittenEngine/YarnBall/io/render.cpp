@@ -2,6 +2,11 @@
 #include <cuda.h>
 
 namespace YarnBall {
+	void Sim::startRender() {
+		vertBuffer->cudaWriteGL(meta.d_verts);
+		qBuffer->cudaWriteGL(meta.d_qs);
+	}
+
 	void Sim::render() {
 		static auto segBase = Kit::get<Kit::Shader>("resources\\shaders\\yarnSegBase.glsl");
 		static auto segForward = Kit::get<Kit::Shader>("resources\\shaders\\yarnSegForward.glsl");
