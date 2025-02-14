@@ -10,7 +10,7 @@ namespace YarnBall {
 	// Each sector computes a portion of the collision energy and this is summed up into sector 0
 	// Sector 0 then performs the actual update
 
-#define BLOCK_SIZE (256)
+#define BLOCK_SIZE (32 * 4)
 #define THREADS_PER_VERTEX (2)
 #define VERTEX_PER_BLOCK (BLOCK_SIZE / THREADS_PER_VERTEX)
 
