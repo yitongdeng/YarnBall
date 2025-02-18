@@ -24,11 +24,11 @@ namespace YarnBall {
 
 		const float h = data->h;
 		const float damping = data->damping / h;
-		const auto verts = data->d_verts;
+		const auto lastPos = data->d_lastPos;
 		const auto dxs = data->d_dx;
 
 		// Linear change
-		Vertex v0 = verts[tid];
+		Vertex v0 = data->d_verts[tid];
 		vec3 dx = dxs[tid];
 
 		// First couple of warps are used to compute the needed energies. 
@@ -43,7 +43,7 @@ namespace YarnBall {
 			// Special connections energy
 			if (v0.connectionIndex >= 0) {
 				constexpr float stiffness = 4e1;
-				vec3 p0 = verts[v0.connectionIndex].pos;
+				vec3 p0 = lastPos[v0.connectionIndex];
 				vec3 p0dx = dxs[v0.connectionIndex];
 				f -= stiffness * ((v0.pos - p0) + (dx - p0dx) + damping * dx);
 				H.diag += stiffness * (1 + damping);
@@ -58,7 +58,7 @@ namespace YarnBall {
 		hess3 H2(0);
 
 		if (v0.flags & (uint32_t)VertexFlags::hasNext) {
-			p1 = verts[tid + 1].pos;
+			p1 = lastPos[tid + 1];
 			p1dx = dxs[tid + 1];
 
 			// Cosserat stretching energy
@@ -86,7 +86,6 @@ namespace YarnBall {
 
 			// Collision energy of this segment
 			const int numCols = data->d_numCols[tid];
-			const auto lastPos = data->d_lastPos;
 			for (int i = sid; i < numCols; i += THREADS_PER_VERTEX) {
 				int colID = collisions[tid + i * numVerts];
 
@@ -104,7 +103,7 @@ namespace YarnBall {
 				vec3 ddpos = mix(dx, p1dx, uv.x) - mix(db0, db1, uv.y);
 				vec3 normal = dpos + ddpos;
 				float d = length(normal);
-				normal /= d;
+				normal *= (1 / d);
 
 				uv.y = uv.x;
 				uv.x = 1 - uv.x;
