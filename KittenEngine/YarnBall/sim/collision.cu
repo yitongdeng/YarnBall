@@ -74,11 +74,7 @@ namespace YarnBall {
 			r += sqrt(glm::max(length2(dxs[ids.y]), length2(dxs[ids.y + 1])));
 		}
 
-		float mr = 2 * data->radius;
 		if (d2 < r * r) {
-			if (d2 < mr * mr) // Report interpenetration
-				errorReturn[1] = Sim::WARNING_SEGMENT_INTERPENETRATION;
-
 			auto nCols = data->d_numCols;
 			const auto collisions = data->d_collisions;
 			int numCols = atomicAdd(&nCols[ids.x], 1);
