@@ -70,7 +70,7 @@ void renderScene() {
 				}
 			}
 			 
-			if (twistTime > end + 11.f) {
+			if (twistTime > end + 13.f) {
 				exportSim = false;
 				scenarioTwist = false;
 				simulate = false;
@@ -323,30 +323,6 @@ void initScene(const char* config) {
 		sim->maxH = 1e-3;
 		sim->upload();
 		sim->meta.gravity = vec3(-3, -3, 0);
-	}
-	else if (true) {
-		constexpr int numVerts = 200;
-		sim = new YarnBall::Sim(numVerts);
-		const float segLen = 0.002f;
-
-		for (size_t i = 0; i < numVerts; i++)
-			sim->verts[i].pos = vec3(segLen * i, 32 * segLen * exp(-2000 * Kit::pow2(segLen * (i - numVerts * 0.5f + 0.5f))), 0);
-		//for (size_t i = 0; i < 32; i++)
-		//	sim->verts[i + 32].pos = vec3(segLen * 12, -4 * segLen, segLen * i - 16 * segLen);
-
-		sim->verts[32].invMass = sim->verts[130].invMass = 0;
-		sim->verts[0].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
-		sim->verts[numVerts - 2].flags |= (uint32_t)YarnBall::VertexFlags::fixOrientation;
-
-		sim->configure();
-		sim->setKBend(3e-8);
-		sim->setKStretch(2e-2);
-		sim->meta.kCollision = 5e-7;
-		sim->meta.radius = 0.4f * segLen;
-		// sim->meta.detectionScaler = 3;
-		// sim->maxH = 1e-4f;
-		sim->upload();
-		sim->meta.gravity = vec3(0);
 	}
 
 	// Copy initial state for animation.

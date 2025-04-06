@@ -16,11 +16,11 @@
 		"kBend": 2e-7,
 		"kCollision": 2e-4,
 		"kFriction": 5,
-		"damping": 1e-6,
+		"damping": 0,
 
 		// Env
 		"gravity": [0, -9.8, 0],
-		"drag": 0.2,
+		"drag": 0,
 
 		// Solver
 		"maxTimeStep": 4e-4,
