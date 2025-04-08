@@ -32,7 +32,7 @@ bool exportBCC = false;
 bool exportEndFrame = false;
 float EXPORT_DT = 1 / 30.f;
 int exportLimit = 2000;
-string exportPath = "./frames/frame";
+string exportPath = "./frames/frame_";
 
 vec3 rotateY(vec3 v, float angle) {
 	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
@@ -184,12 +184,8 @@ void renderGui() {
 		ImGui::InputInt("Itr", &sim->meta.numItr);
 
 		ImGui::Separator();
-		if (sim->meta.detectionPeriod >= 0 && ImGui::Button("Disable collision"))
+		if (sim->meta.detectionPeriod >= 0 && ImGui::Button("Disable collisions"))
 			sim->meta.detectionPeriod = -1;
-		if (sim->meta.useStepSizeLimit && ImGui::Button("Disable step limiting"))
-			sim->meta.useStepSizeLimit = false;
-		if (ImGui::Button("Print cols"))
-			sim->printCollisionStats();
 		if (ImGui::Button("Zero velocity"))
 			sim->zeroVelocities();
 		ImGui::Separator();
@@ -219,11 +215,11 @@ void renderGui() {
 		ImGui::Checkbox("Twist", &scenarioTwist);
 		ImGui::Checkbox("Pull", &scenarioPull);
 		ImGui::Separator();
-		if (ImGui::Button("Export fiber mesh"))
+		if (ImGui::Button("Export fiber mesh now"))
 			sim->exportFiberMesh("./frameFiber.obj");
 		if (ImGui::Button("Export frame obj"))
-			sim->exportToOBJ("./frame.obj");
-		if (ImGui::Button("Export frame bcc"))
+			sim->exportToOBJ("./frame.obj now");
+		if (ImGui::Button("Export frame bcc now"))
 			sim->exportToBCC("./frame.bcc", false);
 	}
 
@@ -333,7 +329,7 @@ int main(int argc, char** argv) {
 	string config = "./configs/cable_work_pattern.json";
 	app.add_option("filename", config, "Path to the scene json file")->required(false);
 
-	auto outputOption = app.add_option("-o,--output", exportPath, "Output directory (must exist). Output file path if last frame only.");
+	auto outputOption = app.add_option("-o,--output", exportPath, "Output path prefix (directory must exist). Output file path if last frame only.");
 	app.add_option("-n,--nframes", exportLimit, "Number of frames to simulate");
 	app.add_option("-s", simulate, "Start simulating immediately");
 
