@@ -1,4 +1,4 @@
-# YarnBall Sim: A yarn level cloth simulator (Stable Cosserat Rods)
+# YarnBall Sim: A high performance yarn level cloth simulator
 
 A massively parallel GPU implementation of the paper ["Stable Cosserat Rods" SIGGRAPH 2025](https://s2025.siggraph.org/), [Jerry Hsu](https://jerryhsu.io), Tongtong Wang, Kui Wu, and Cem Yuksel. 
 
