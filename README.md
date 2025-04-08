@@ -43,6 +43,28 @@ Curves can be provided with [.bcc](https://www.cemyuksel.com/cyCodeBase/soln/usi
 ### CLI
 The CLI contains some basic functionality for simulating and exporting scenes.
 Run ``` Gui.exe -help``` to see availible flags.
+```
+YarnBall: High performance Cosserat Rods simulation.
+Usage: C:\Workspace\Yarn\YarnBall\x64\Release\Gui.exe [OPTIONS] [filename]
+
+Positionals:
+  filename TEXT               Path to the scene json file
+
+Options:
+  -h,--help                   Print this help message and exit
+  -o,--output TEXT            Output path prefix (directory must exist). Output file path if last frame only.
+  -n,--nframes INT            Number of frames to simulate
+  --headless                  Run in headless mode (without GUI)
+  -s                          Start simulating immediately
+  -e,--export                 Export simulation frames
+  --exportlast                Export the last frame only
+  --fiber                     Export as fiber level mesh (slow) instead of obj splines
+  --bcc                       Export as BCC format instead of obj splines
+  --twist                     Twist animation
+  --pull                      Pull animation
+  --fps INT [30]              Animation frames per second
+```
+
 For example, to run the twisting example in the paper, use
 ```
 Gui.exe configs\cable_work_pattern.json --twist -s
