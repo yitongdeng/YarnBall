@@ -14,6 +14,7 @@ Project templated from [Kitten Engine](https://github.com/jerry060599/KittenEngi
 Configured for Windows and Visual Studios. 
 
 **Requires/tested on CUDA 12.8**
+
 **Dependencies using vcpkg**: assimp, eigen3, stb headers, glad, glfw, imgui[opengl3-glad-binding], glm, jsoncpp, cli11
 
 To install these packages:
