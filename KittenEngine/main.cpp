@@ -1,6 +1,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <CLI/CLI.hpp>
 
 #include "KittenEngine/includes/KittenEngine.h"
 #include "KittenEngine/includes/modules/BasicCameraControl.h"
@@ -19,18 +20,19 @@ float timeScale = 1.;
 float measuredSimSpeed = 1;
 Kit::Dist simSpeedDist;
 
-const float EXPORT_DT = 1 / 30.f;
-
-bool exportSim = false;
-bool exportFiberLevel = false;
-bool scenarioTwist = false;
-bool scenarioPull = false;
-bool scenarioGrav = false;
-bool scenarioTwirl = false;
-
 vector<vec3> initialPos;
 vector<Kit::Rotor> initialQ;
 Kit::Bound<> initialBounds;
+
+bool exportSim = false;
+bool scenarioTwist = false;
+bool scenarioPull = false;
+bool exportFiberLevel = false;
+bool exportBCC = false;
+bool exportEndFrame = false;
+float EXPORT_DT = 1 / 30.f;
+int exportLimit = 2000;
+string exportPath = "./frames/frame";
 
 vec3 rotateY(vec3 v, float angle) {
 	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
@@ -45,6 +47,7 @@ void renderScene() {
 			advTime = glm::min(realTime, 1 / 40.f);
 		vec3 center = 0.5f * (initialBounds.max + initialBounds.min);
 
+		// Twisting animation
 		if (scenarioTwist) {
 			sim->download();
 
@@ -69,17 +72,18 @@ void renderScene() {
 					if (twistTime > end + 3.0f) vert.invMass = sim->initialInvMasses[i];
 				}
 			}
-			 
+			/*
 			if (twistTime > end + 13.f) {
 				exportSim = false;
 				scenarioTwist = false;
 				simulate = false;
 			}
-
+			*/
 			sim->upload();
 			twistTime = nextTime;
 		}
 
+		// Pulling animation
 		if (scenarioPull) {
 			sim->download();
 			sim->meta.gravity = vec3(0, 0, -9.8);
@@ -102,44 +106,15 @@ void renderScene() {
 					sim->vels[i].y = (nextPos - pos) / advTime;
 				}
 			}
-
+			/*
 			if (pullTime > end + 4.f) {
 				exportSim = false;
 				scenarioPull = false;
 				simulate = false;
 			}
-
+			*/
 			sim->upload();
 			pullTime = nextTime;
-		}
-
-		if (scenarioGrav) {
-			sim->download();
-			static float gravTime = 0;
-			const float end = 10.f;
-			sim->meta.gravity = vec3(0, -9.8 * mix(1.f, 25.f, glm::clamp(gravTime - 2, 0.f, end) / end), 0);
-
-			if (gravTime > end + 4.f) {
-				exportSim = false;
-				scenarioGrav = false;
-				simulate = false;
-			}
-
-			sim->upload();
-			gravTime += advTime;
-		}
-
-		if (scenarioTwirl) {
-			sim->download();
-
-			static float twirlTime = 0;
-			twirlTime += advTime;
-			sim->verts[130].pos =
-				initialPos[130] - vec3(glm::clamp(0.01f * (twirlTime - 5), 0.f, 0.1f), 0, 0);
-			float theta = 1.f * glm::max(twirlTime - 2, 0.f);
-			sim->qs[sim->meta.numVerts - 2] = initialQ[sim->meta.numVerts - 2] * Kit::Rotor(sin(0.5f * theta), 0, 0, cos(0.5f * theta));
-
-			sim->upload();
 		}
 
 		Kit::StopWatch timer;
@@ -148,20 +123,24 @@ void renderScene() {
 
 		if (exportSim) {
 			static int frameID = 0;
-			//if (frameID == 299) {
-			//	exportSim = false;
-			//	simulate = false;
-			//}
-			if (exportFiberLevel) {
-				printf("Exporting fiber frame %d\n", frameID);
-				sim->exportFiberMesh("./frames/frame" + to_string(frameID++) + ".obj");
+			if (frameID > exportLimit) {
+				exportSim = false;
+				simulate = false;
+				if (exportEndFrame)
+					if (exportFiberLevel) sim->exportFiberMesh(exportPath);
+					else if (exportBCC) sim->exportToBCC(exportPath, false);
+					else sim->exportToOBJ(exportPath);
+
+				printf("Export complete. sim/real ratio Avg %.3f, SD: %.3f, N=%d\n", simSpeedDist.mean(), simSpeedDist.sd(), simSpeedDist.num);
+				exit(0);
 			}
-			else
-				sim->exportToOBJ("./frames/frame" + to_string(frameID++) + ".obj");
+			if (!exportEndFrame)
+				if (exportFiberLevel) sim->exportFiberMesh(exportPath + to_string(frameID) + ".obj");
+				else if (exportBCC) sim->exportToBCC(exportPath + to_string(frameID) + ".bcc", false);
+				else sim->exportToOBJ(exportPath + to_string(frameID) + ".obj");
+			frameID++;
 		}
 
-		//if (simSpeedDist.num > 60)
-		//	simSpeedDist = Kit::Dist();
 		float ss = advTime / measuredTime;
 		measuredSimSpeed = mix(measuredSimSpeed, ss, 0.1f);
 		simSpeedDist.accu(ss);
@@ -239,31 +218,13 @@ void renderGui() {
 		ImGui::Checkbox("Export as Fiber Mesh", &exportFiberLevel);
 		ImGui::Checkbox("Twist", &scenarioTwist);
 		ImGui::Checkbox("Pull", &scenarioPull);
-		ImGui::Checkbox("Grav Pull", &scenarioGrav);
-		ImGui::Checkbox("Twirl", &scenarioTwirl);
 		ImGui::Separator();
 		if (ImGui::Button("Export fiber mesh"))
 			sim->exportFiberMesh("./frameFiber.obj");
-
 		if (ImGui::Button("Export frame obj"))
 			sim->exportToOBJ("./frame.obj");
 		if (ImGui::Button("Export frame bcc"))
 			sim->exportToBCC("./frame.bcc", false);
-
-		if (ImGui::Button("Test perf")) {
-			constexpr float adv = 1.0f;
-			auto s = sim->stepCount();
-
-			Kit::StopWatch timer;
-			sim->advance(adv);
-			auto dt = timer.time();
-
-			auto numSteps = sim->stepCount() - s;
-
-			printf("Advanced %f s in %zd steps\n", adv, numSteps);
-			printf("Elapsed %f s (%f ms per step). Ratio %f.\n", dt, dt / numSteps * 1000, adv / dt);
-			Kit::print(sim->bounds().max - sim->bounds().min);
-		}
 	}
 
 	ImGui::End();
@@ -303,6 +264,7 @@ void initScene(const char* config) {
 		sim->renderShaded = true;
 	}
 	else if (false) {
+		// Debugging purposes
 		constexpr int numVerts = 64;
 		sim = new YarnBall::Sim(numVerts);
 		const float segLen = 0.002f;
@@ -366,6 +328,32 @@ void keyCallback(GLFWwindow* w, int key, int scancode, int action, int mode) {
 }
 
 int main(int argc, char** argv) {
+	CLI::App app{ "YarnBall: High performance Cosserat Rods simulation." };
+
+	string config = "./configs/cable_work_pattern.json";
+	app.add_option("filename", config, "Path to the scene json file")->required(false);
+
+	auto outputOption = app.add_option("-o,--output", exportPath, "Output directory (must exist). Output file path if last frame only.");
+	app.add_option("-n,--nframes", exportLimit, "Number of frames to simulate");
+	app.add_option("-s", simulate, "Start simulating immediately");
+
+	app.add_flag("-e,--export", exportSim, "Export simulation frames");
+	app.add_flag("--exportlast", exportEndFrame, "Export the last frame only");
+
+	app.add_flag("--fiber", exportFiberLevel, "Export as fiber level mesh (slow) instead of obj splines");
+	app.add_flag("--bcc", exportBCC, "Export as BCC format instead of obj splines");
+	app.add_flag("--twist", scenarioTwist, "Twist animation");
+	app.add_flag("--pull", scenarioPull, "Pull animation");
+
+	int exportFPS = 30;
+	app.add_option("--fps", exportFPS, "Animation frames per second")->default_val(30);
+	EXPORT_DT = 1.f / exportFPS;
+
+	CLI11_PARSE(app, argc, argv);
+
+	if (outputOption->count() && !exportSim) exportSim = true;
+	if (exportEndFrame) exportSim = true;
+
 	// Init window and OpenGL
 	Kit::initWindow(ivec2(800, 600), "OpenGL Window");
 
@@ -376,7 +364,7 @@ int main(int argc, char** argv) {
 	Kit::getIO().keyCallback = keyCallback;
 
 	// Init scene
-	initScene((argc >= 2) ? argv[1] : nullptr);
+	initScene(config.c_str());
 
 	while (!Kit::shouldClose()) {
 		Kit::startFrame();
