@@ -38,7 +38,7 @@ When in doubt, use glm version ```1.0.1#3```.
 This repo contains both a sample CLI and a C++ interface. 
 In most cases, it is the easiest to load a scene directly through a provided JSON.
 A sample JSON format can be found in [cable_work_pattern.json](KittenEngine/configs/cable_work_pattern.json)
-Curves can be provided with .BCC files or .POLY formats. See [reader.cpp](KittenEngine/YarnBall/io/reader.cpp) for how to load additional formats.
+Curves can be provided with [.bcc](https://www.cemyuksel.com/cyCodeBase/soln/using_bcc_files.html) files or .poly formats. See [reader.cpp](KittenEngine/YarnBall/io/reader.cpp) for how to load additional formats.
 
 ### CLI
 The CLI contains some basic functionality for simulating and exporting scenes.

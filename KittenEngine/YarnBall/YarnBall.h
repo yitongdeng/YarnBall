@@ -171,13 +171,13 @@ namespace YarnBall {
 
 		// Utils
 		// void glueEndpoints(float searchRadius);
-		void upload();
-		void download();
+		void upload();			// Upload the CPU data to the GPU
+		void download();		// Download the GPU data to the CPU
 		void zeroVelocities();
 
 		// Simulation
-		void step(float dt);
-		float advance(float dt);
+		void step(float dt);		// Perform one timestep
+		float advance(float dt);	// Advance the simulation by dt using one or more timesteps. 
 
 		void printCollisionStats();
 		Kitten::LBVH::aabb bounds();
