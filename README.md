@@ -4,9 +4,9 @@ A massively parallel GPU implementation of the paper ["Stable Cosserat Rods" SIG
 
 This repository contains the source code, model, and paramters for the yarn twisting and yarn letter examples.
 
-For the CPU based examples, see the [StableCosseratRods](https://github.com/jerry060599/StableCosseratRods) repo.
-
 [![Example](images/yarnTwist.gif)](https://youtu.be/hmEGLPG1zP0)
+
+^ The above example runs in real time on an NVidia RTX 3090. For the CPU based examples, see the [StableCosseratRods](https://github.com/jerry060599/StableCosseratRods) repo.
 
 ## Build
 Project templated from [Kitten Engine](https://github.com/jerry060599/KittenEngine/tree/main)
