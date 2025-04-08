@@ -32,120 +32,123 @@ bool exportBCC = false;
 bool exportEndFrame = false;
 float EXPORT_DT = 1 / 30.f;
 int exportLimit = 2000;
+bool headlessMode = false;
 string exportPath = "./frames/frame_";
 
 vec3 rotateY(vec3 v, float angle) {
 	return vec3(cos(angle) * v.x - sin(angle) * v.z, v.y, sin(angle) * v.x + cos(angle) * v.z);
 }
 
-void renderScene() {
-	if (simulate) {
-		// Dynamic dt
-		float advTime = EXPORT_DT;
+void performSim() {
+	// Dynamic dt
+	float advTime = EXPORT_DT;
+	if (!headlessMode) {
 		const float realTime = ImGui::GetIO().DeltaTime * timeScale;
 		if (!exportSim)
 			advTime = glm::min(realTime, 1 / 40.f);
-		vec3 center = 0.5f * (initialBounds.max + initialBounds.min);
+	}
+	vec3 center = 0.5f * (initialBounds.max + initialBounds.min);
 
-		// Twisting animation
-		if (scenarioTwist) {
-			sim->download();
+	// Twisting animation
+	if (scenarioTwist) {
+		sim->download();
 
-			static float twistTime = 0;
-			float nextTime = twistTime + advTime;
+		static float twistTime = 0;
+		float nextTime = twistTime + advTime;
 
-			constexpr float speed = 0.5f * 2 * glm::pi<float>();
-			constexpr float end = 12.f;
-			float angle = glm::clamp(twistTime - 2.f, 0.f, end) * speed;
-			float nextAngle = glm::clamp(nextTime - 2.f, 0.f, end) * speed;
+		constexpr float speed = 0.5f * 2 * glm::pi<float>();
+		constexpr float end = 12.f;
+		float angle = glm::clamp(twistTime - 2.f, 0.f, end) * speed;
+		float nextAngle = glm::clamp(nextTime - 2.f, 0.f, end) * speed;
 
-			for (size_t i = 0; i < sim->meta.numVerts; i++) {
-				auto& vert = sim->verts[i];
-				auto init = initialPos[i];
-				if (vert.pos.y < center.y && vert.invMass == 0) {
-					vec3 pos = center + rotateY(init - center, angle);
-					vec3 nextPos = center + rotateY(init - center, nextAngle);
+		for (size_t i = 0; i < sim->meta.numVerts; i++) {
+			auto& vert = sim->verts[i];
+			auto init = initialPos[i];
+			if (vert.pos.y < center.y && vert.invMass == 0) {
+				vec3 pos = center + rotateY(init - center, angle);
+				vec3 nextPos = center + rotateY(init - center, nextAngle);
 
-					vert.pos = pos;
-					sim->vels[i] = (nextPos - pos) / advTime;
+				vert.pos = pos;
+				sim->vels[i] = (nextPos - pos) / advTime;
 
-					if (twistTime > end + 3.0f) vert.invMass = sim->initialInvMasses[i];
-				}
+				if (twistTime > end + 3.0f) vert.invMass = sim->initialInvMasses[i];
 			}
-			/*
-			if (twistTime > end + 13.f) {
-				exportSim = false;
-				scenarioTwist = false;
-				simulate = false;
-			}
-			*/
-			sim->upload();
-			twistTime = nextTime;
 		}
-
-		// Pulling animation
-		if (scenarioPull) {
-			sim->download();
-			sim->meta.gravity = vec3(0, 0, -9.8);
-			static float pullTime = 0;
-			float nextTime = pullTime + advTime;
-
-			const float speed = 0.25f;
-			const float end = 6.f;
-			float x = -speed * glm::clamp(pullTime - 2.f, 0.f, end);
-			float nextX = -speed * glm::clamp(nextTime - 2.f, 0.f, end);
-
-			for (size_t i = 0; i < sim->meta.numVerts; i++) {
-				auto& vert = sim->verts[i];
-				auto init = initialPos[i];
-				if (vert.invMass == 0) {
-					float pos = init.y + ((vert.pos.y < center.y) ? x : -x);
-					float nextPos = init.y + ((vert.pos.y < center.y) ? nextX : -nextX);
-
-					vert.pos.y = pos;
-					sim->vels[i].y = (nextPos - pos) / advTime;
-				}
-			}
-			/*
-			if (pullTime > end + 4.f) {
-				exportSim = false;
-				scenarioPull = false;
-				simulate = false;
-			}
-			*/
-			sim->upload();
-			pullTime = nextTime;
+		/*
+		if (twistTime > end + 13.f) {
+			exportSim = false;
+			scenarioTwist = false;
+			simulate = false;
 		}
-
-		Kit::StopWatch timer;
-		sim->advance(advTime);
-		float measuredTime = timer.time();
-
-		if (exportSim) {
-			static int frameID = 0;
-			if (frameID > exportLimit) {
-				exportSim = false;
-				simulate = false;
-				if (exportEndFrame)
-					if (exportFiberLevel) sim->exportFiberMesh(exportPath);
-					else if (exportBCC) sim->exportToBCC(exportPath, false);
-					else sim->exportToOBJ(exportPath);
-
-				printf("Export complete. sim/real ratio Avg %.3f, SD: %.3f, N=%d\n", simSpeedDist.mean(), simSpeedDist.sd(), simSpeedDist.num);
-				exit(0);
-			}
-			if (!exportEndFrame)
-				if (exportFiberLevel) sim->exportFiberMesh(exportPath + to_string(frameID) + ".obj");
-				else if (exportBCC) sim->exportToBCC(exportPath + to_string(frameID) + ".bcc", false);
-				else sim->exportToOBJ(exportPath + to_string(frameID) + ".obj");
-			frameID++;
-		}
-
-		float ss = advTime / measuredTime;
-		measuredSimSpeed = mix(measuredSimSpeed, ss, 0.1f);
-		simSpeedDist.accu(ss);
+		*/
+		sim->upload();
+		twistTime = nextTime;
 	}
 
+	// Pulling animation
+	if (scenarioPull) {
+		sim->download();
+		sim->meta.gravity = vec3(0, 0, -9.8);
+		static float pullTime = 0;
+		float nextTime = pullTime + advTime;
+
+		const float speed = 0.25f;
+		const float end = 6.f;
+		float x = -speed * glm::clamp(pullTime - 2.f, 0.f, end);
+		float nextX = -speed * glm::clamp(nextTime - 2.f, 0.f, end);
+
+		for (size_t i = 0; i < sim->meta.numVerts; i++) {
+			auto& vert = sim->verts[i];
+			auto init = initialPos[i];
+			if (vert.invMass == 0) {
+				float pos = init.y + ((vert.pos.y < center.y) ? x : -x);
+				float nextPos = init.y + ((vert.pos.y < center.y) ? nextX : -nextX);
+
+				vert.pos.y = pos;
+				sim->vels[i].y = (nextPos - pos) / advTime;
+			}
+		}
+		/*
+		if (pullTime > end + 4.f) {
+			exportSim = false;
+			scenarioPull = false;
+			simulate = false;
+		}
+		*/
+		sim->upload();
+		pullTime = nextTime;
+	}
+
+	Kit::StopWatch timer;
+	sim->advance(advTime);
+	float measuredTime = timer.time();
+
+	if (exportSim) {
+		static int frameID = 0;
+		if (frameID > exportLimit) {
+			exportSim = false;
+			simulate = false;
+			if (exportEndFrame)
+				if (exportFiberLevel) sim->exportFiberMesh(exportPath);
+				else if (exportBCC) sim->exportToBCC(exportPath, false);
+				else sim->exportToOBJ(exportPath);
+
+			printf("Export complete. sim/real ratio Avg %.3f, SD: %.3f, N=%d\n", simSpeedDist.mean(), simSpeedDist.sd(), simSpeedDist.num);
+			exit(0);
+		}
+		if (!exportEndFrame)
+			if (exportFiberLevel) sim->exportFiberMesh(exportPath + to_string(frameID) + ".obj");
+			else if (exportBCC) sim->exportToBCC(exportPath + to_string(frameID) + ".bcc", false);
+			else sim->exportToOBJ(exportPath + to_string(frameID) + ".obj");
+		frameID++;
+	}
+
+	float ss = advTime / measuredTime;
+	measuredSimSpeed = mix(measuredSimSpeed, ss, 0.1f);
+	simSpeedDist.accu(ss);
+}
+
+void renderScene() {
 	auto bounds = sim->bounds();
 	if (glm::isfinite(bounds.min.x)) {
 		Kit::lights[0].pos = bounds.center();
@@ -226,21 +229,7 @@ void renderGui() {
 	ImGui::End();
 }
 
-void initScene(const char* config) {
-	Kit::loadDirectory("resources");
-
-	Kit::UBOLight light;
-	light.col = vec4(1, 1, 1, 1);
-	light.dir = normalize(vec3(1, -2, -1));
-	light.hasShadow = true;
-	light.type = (int)Kit::KittenLight::DIR;
-	Kit::lights.push_back(light);
-	light.shadowBias = 0.0001f;
-	Kit::shadowDist = 0.5f;
-
-	Kit::ambientLight.col = vec4(0);
-
-	camera.angle = vec2(30, 30);
+void loadSim(const char* config) {
 	if (true) {
 		try {
 			if (config)
@@ -300,6 +289,23 @@ void initScene(const char* config) {
 	if (!sim) exit(-1);
 }
 
+void initScene() {
+	Kit::loadDirectory("resources");
+
+	Kit::UBOLight light;
+	light.col = vec4(1, 1, 1, 1);
+	light.dir = normalize(vec3(1, -2, -1));
+	light.hasShadow = true;
+	light.type = (int)Kit::KittenLight::DIR;
+	Kit::lights.push_back(light);
+	light.shadowBias = 0.0001f;
+	Kit::shadowDist = 0.5f;
+
+	Kit::ambientLight.col = vec4(0);
+
+	camera.angle = vec2(30, 30);
+}
+
 void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 	camera.processMouseButton(button, action, mode);
 }
@@ -331,8 +337,10 @@ int main(int argc, char** argv) {
 
 	auto outputOption = app.add_option("-o,--output", exportPath, "Output path prefix (directory must exist). Output file path if last frame only.");
 	app.add_option("-n,--nframes", exportLimit, "Number of frames to simulate");
-	app.add_option("-s", simulate, "Start simulating immediately");
 
+	app.add_flag("--headless", headlessMode, "Run in headless mode (without GUI)");
+
+	app.add_flag("-s", simulate, "Start simulating immediately");
 	app.add_flag("-e,--export", exportSim, "Export simulation frames");
 	app.add_flag("--exportlast", exportEndFrame, "Export the last frame only");
 
@@ -350,20 +358,28 @@ int main(int argc, char** argv) {
 	if (outputOption->count() && !exportSim) exportSim = true;
 	if (exportEndFrame) exportSim = true;
 
-	// Init window and OpenGL
-	Kit::initWindow(ivec2(800, 600), "OpenGL Window");
+	if (!headlessMode) {
+		// Init window and OpenGL
+		Kit::initWindow(ivec2(800, 600), "OpenGL Window");
 
-	// Register callbacks
-	Kit::getIO().mouseButtonCallback = mouseButtonCallback;
-	Kit::getIO().cursorPosCallback = cursorPosCallback;
-	Kit::getIO().scrollCallback = scrollCallback;
-	Kit::getIO().keyCallback = keyCallback;
+		// Register callbacks
+		Kit::getIO().mouseButtonCallback = mouseButtonCallback;
+		Kit::getIO().cursorPosCallback = cursorPosCallback;
+		Kit::getIO().scrollCallback = scrollCallback;
+		Kit::getIO().keyCallback = keyCallback;
+		initScene();
+	}
 
-	// Init scene
-	initScene(config.c_str());
+	loadSim(config.c_str());
+
+	if (headlessMode) {
+		while (true) performSim();
+		return 0;
+	}
 
 	while (!Kit::shouldClose()) {
 		Kit::startFrame();
+		if (simulate) performSim();
 		renderScene();		// Render
 		renderGui();		// GUI Render
 		Kit::endFrame();

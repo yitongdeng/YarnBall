@@ -1,4 +1,4 @@
-# YarnBall: A yarn level cloth simulator (Stable Cosserat Rods)
+# YarnBall Sim: A yarn level cloth simulator (Stable Cosserat Rods)
 
 A massively parallel GPU implementation of the paper ["Stable Cosserat Rods", SIGGRAPH 2025](https://s2025.siggraph.org/). 
 
@@ -10,7 +10,6 @@ For the CPU based examples, see the [StableCosseratRods](https://github.com/jerr
 Project templated from [Kitten Engine](https://github.com/jerry060599/KittenEngine/tree/main)
 
 Configured for Windows and Visual Studios. 
-The main library is compiled through **clang** for performance and the app is compiled through **msvc** to simplify linking.
 
 **Requires/tested on CUDA 12.8**
 **Dependencies using vcpkg**: assimp, eigen3, stb headers, glad, glfw, imgui[opengl3-glad-binding], glm, jsoncpp, cli11
@@ -34,6 +33,24 @@ vcpkg.exe install cli11:x64-windows
 **DO NOT INSTALL GLM DIRECTLY FROM THE CURRENT WORKING BRANCH.**
 Only install versions taged as stable releases or through vcpkg. 
 When in doubt, use glm version ```1.0.1#3```. 
+
+## Usage
+This repo contains both a sample CLI and a C++ interface. 
+
+### CLI
+The CLI contains some basic functionality for simulating and exporting scenes.
+Run ``` Gui.exe -help``` to see availible flags.
+For example, to run the twisting example in the paper, use
+```
+Gui.exe configs\cable_work_pattern.json --twist -s
+```
+To export the animation, use
+```
+Gui.exe configs\cable_work_pattern.json --export --twist -s -n 750
+```
+
+### C++ interface
+
 
 ## License
 Unless otherwise stated in the file header, the contents of this repository are provided under the following license. Files that specify a different copyright are governed by the terms indicated therein.

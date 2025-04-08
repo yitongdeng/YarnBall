@@ -154,8 +154,10 @@ namespace YarnBall {
 			qRests[i] = length(qRests[i]) * (qs[i].inverse() * qs[i + 1]).v;
 
 		// Mesh for rendering
-		cylMesh = Kit::genCylMesh(6, 1, false);
-		cylMeshHiRes = Kit::genCylMesh(8, 6, false);
+		if (glGetString) {
+			cylMesh = Kit::genCylMesh(6, 1, false);
+			cylMeshHiRes = Kit::genCylMesh(8, 6, false);
+		}
 
 		// Init meta
 		cudaMalloc(&d_meta, sizeof(MetaData));
