@@ -1,8 +1,8 @@
-# YarnBall Sim: A high performance yarn level cloth simulator
+# YarnBall Sim: A high performance yarn simulator
 
 A massively parallel GPU implementation of the paper ["Stable Cosserat Rods" SIGGRAPH 2025](https://s2025.siggraph.org/), [Jerry Hsu](https://jerryhsu.io), Tongtong Wang, Kui Wu, and Cem Yuksel. 
 
-This repository contains the source code, model, and paramters for the yarn twisting example.
+This repository contains the source code, model, and paramters for the yarn twisting and yarn letter examples.
 
 For the CPU based examples, see the [StableCosseratRods](https://github.com/jerry060599/StableCosseratRods) repo.
 
