@@ -36,6 +36,9 @@ When in doubt, use glm version ```1.0.1#3```.
 
 ## Usage
 This repo contains both a sample CLI and a C++ interface. 
+In most cases, it is the easiest to load a scene directly through a provided JSON.
+A sample JSON format can be found in [cable_work_pattern.bcc](KittenEngine/configs/models/cable_work_pattern.bcc)
+Curves can be provided with .BCC files or .POLY formats. See [reader.cpp](KittenEngine/YarnBall/io/reader.cpp) for how to load additional formats.
 
 ### CLI
 The CLI contains some basic functionality for simulating and exporting scenes.
@@ -50,7 +53,8 @@ Gui.exe configs\cable_work_pattern.json --export --twist -s -n 750
 ```
 
 ### C++ interface
-
+The C++ interface includes everything under the YarnBall namespace and is placed in its own vs project, "YarnBall".
+See [YarnBall.h](KittenEngine/YarnBall/YarnBall.h) for availible functions and [jsonBuilder.cpp](KittenEngine/YarnBall/io/jsonBuilder.cpp) for sample usage.
 
 ## License
 Unless otherwise stated in the file header, the contents of this repository are provided under the following license. Files that specify a different copyright are governed by the terms indicated therein.
