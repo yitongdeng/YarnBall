@@ -6,6 +6,8 @@ This repository contains the source code, model, and paramters for the yarn twis
 
 For the CPU based examples, see the [StableCosseratRods](https://github.com/jerry060599/StableCosseratRods) repo.
 
+[![Example](images/yarnTwist.gif)](https://youtu.be/hmEGLPG1zP0)
+
 ## Build
 Project templated from [Kitten Engine](https://github.com/jerry060599/KittenEngine/tree/main)
 
