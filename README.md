@@ -41,7 +41,7 @@ When in doubt, use glm version ```1.0.1#3```.
 This repo contains both a sample CLI and a C++ interface. 
 In most cases, it is the easiest to load a scene directly through a provided JSON.
 Sample JSON formats can be found in [cable_work_pattern.json](KittenEngine/configs/cable_work_pattern.json) and [letterS.json](KittenEngine/configs/letterS.json).
-Curves can be provided with [.bcc](https://www.cemyuksel.com/cyCodeBase/soln/using_bcc_files.html) or .poly files. See [reader.cpp](KittenEngine/YarnBall/io/reader.cpp) for how to load additional formats.
+Curves/lines can be provided with [.bcc](https://www.cemyuksel.com/cyCodeBase/soln/using_bcc_files.html), [.obj](https://en.wikipedia.org/wiki/Wavefront_.obj_file), or [.poly](https://paulbourke.net/dataformats/poly/) files. See [reader.cpp](KittenEngine/YarnBall/io/reader.cpp) for how to load additional formats.
 
 ### CLI
 The CLI contains some basic functionality for simulating and exporting scenes.
@@ -63,6 +63,7 @@ Options:
   -o,--output TEXT            Output path prefix (directory must exist). Output file path if last frame only.
   -n,--nframes INT            Number of frames to simulate
   --headless                  Run in headless mode (without GUI)
+  --exit                      Exit once all exports are done.
   -s                          Start simulating immediately
   -e,--export                 Export simulation frames
   --exportlast                Export the last frame only

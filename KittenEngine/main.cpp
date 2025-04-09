@@ -24,6 +24,7 @@ vector<vec3> initialPos;
 vector<Kit::Rotor> initialQ;
 Kit::Bound<> initialBounds;
 
+bool exitWhenDone = false;
 bool exportSim = false;
 bool scenarioTwist = false;
 bool scenarioPull = false;
@@ -134,7 +135,7 @@ void performSim() {
 				else sim->exportToOBJ(exportPath);
 
 			printf("Export complete. sim/real ratio Avg %.3f, SD: %.3f, N=%d\n", simSpeedDist.mean(), simSpeedDist.sd(), simSpeedDist.num);
-			exit(0);
+			if (exitWhenDone) exit(0);
 		}
 		if (!exportEndFrame)
 			if (exportFiberLevel) sim->exportFiberMesh(exportPath + to_string(frameID) + ".obj");
@@ -220,8 +221,8 @@ void renderGui() {
 		ImGui::Separator();
 		if (ImGui::Button("Export fiber mesh now"))
 			sim->exportFiberMesh("./frameFiber.obj");
-		if (ImGui::Button("Export frame obj"))
-			sim->exportToOBJ("./frame.obj now");
+		if (ImGui::Button("Export frame obj now"))
+			sim->exportToOBJ("./frame.obj");
 		if (ImGui::Button("Export frame bcc now"))
 			sim->exportToBCC("./frame.bcc", false);
 	}
@@ -232,11 +233,8 @@ void renderGui() {
 void loadSim(const char* config) {
 	if (true) {
 		try {
-			if (config)
-				sim = YarnBall::buildFromJSON(config);
-			else
-				// sim = YarnBall::buildFromJSON("./configs/letterI.json");
-				sim = YarnBall::buildFromJSON("./configs/cable_work_pattern.json");
+			if (config) sim = YarnBall::buildFromJSON(config);
+			else sim = YarnBall::buildFromJSON("./configs/cable_work_pattern.json");
 		}
 		catch (const std::exception& e) {
 			printf("Error: %s\n", e.what());
@@ -332,6 +330,7 @@ void keyCallback(GLFWwindow* w, int key, int scancode, int action, int mode) {
 int main(int argc, char** argv) {
 	CLI::App app{ "YarnBall: High performance Cosserat Rods simulation." };
 
+	// string config = "./configs/letterG.json";
 	string config = "./configs/cable_work_pattern.json";
 	app.add_option("filename", config, "Path to the scene json file")->required(false);
 
@@ -339,6 +338,7 @@ int main(int argc, char** argv) {
 	app.add_option("-n,--nframes", exportLimit, "Number of frames to simulate");
 
 	app.add_flag("--headless", headlessMode, "Run in headless mode (without GUI)");
+	app.add_flag("--exit", exitWhenDone, "Exit once all exports are done.");
 
 	app.add_flag("-s", simulate, "Start simulating immediately");
 	app.add_flag("-e,--export", exportSim, "Export simulation frames");
@@ -373,6 +373,7 @@ int main(int argc, char** argv) {
 	loadSim(config.c_str());
 
 	if (headlessMode) {
+		exitWhenDone = true;
 		while (true) performSim();
 		return 0;
 	}

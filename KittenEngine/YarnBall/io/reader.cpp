@@ -47,7 +47,7 @@ namespace YarnBall {
 		return sim;
 	}
 
-	Sim* readFromBCC(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves) {
+	Sim* readFromBCC(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves, bool allowResample) {
 		BCCHeader header;
 		FILE* pFile = fopen(path.c_str(), "rb");
 		if (!pFile) throw std::runtime_error("Could not open file");
@@ -81,7 +81,7 @@ namespace YarnBall {
 
 			for (auto& p : points) p = vec3(transform * vec4(p, 1));
 
-			if (!isPolyline)	// Resample CMR spline
+			if (allowResample && !isPolyline)	// Resample CMR spline
 				points = Resample::resampleCMR(points, 1, points.size() - 2, targetSegLen);
 
 			// Ignore curves with less than 3 points
@@ -97,7 +97,57 @@ namespace YarnBall {
 		return createFromCurves(curves, isCurveClosed, numVerts);
 	}
 
-	Sim* readFromPoly(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves) {
+	Sim* readFromOBJ(std::string path, float targetSegLen, mat4 transform, bool allowResample) {
+		ifstream file(path);
+		if (!file.is_open())
+			throw std::runtime_error("Could not open file.");
+
+		vector<vec3> vertices;
+		vector<vector<int>> lines;
+
+		string line;
+		while (std::getline(file, line)) {
+			std::istringstream iss(line);
+			std::string prefix;
+			iss >> prefix;
+
+			if (prefix == "v") {
+				float x, y, z;
+				iss >> x >> y >> z;
+				vertices.emplace_back(x, y, z);
+			}
+			else if (prefix == "l") {
+				std::vector<int> lineIndices;
+				int index;
+				while (iss >> index) {
+					lineIndices.push_back(index);
+				}
+				lines.push_back(lineIndices);
+			}
+		}
+
+		int numVerts = 0;
+		vector<vector<vec3>> curves;
+		vector<bool> isCurveClosed;
+		for (auto& line : lines) {
+			vector<vec3> curve;
+			curve.reserve(line.size());
+			for (int index : line)
+				curve.push_back(vertices[index - 1]);
+
+			if (allowResample)
+				curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
+
+			if (curve.size() < 4) continue;
+			numVerts += curve.size();
+			curves.push_back(curve);
+			isCurveClosed.push_back(false);
+		}
+
+		return createFromCurves(curves, isCurveClosed, numVerts);
+	}
+
+	Sim* readFromPoly(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves, bool allowResample) {
 		std::ifstream file(path);
 
 		if (!file.is_open())
@@ -226,9 +276,10 @@ namespace YarnBall {
 				}
 			}
 
-			if (curve.size() < 4) continue;
 			printf("Found closed curve with %zd points from %d to %d\n", curve.size(), i + 1, curI + 1);
-			curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
+			if (allowResample)
+				curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
+			if (curve.size() < 4) continue;
 			numVerts += curve.size();
 			curves.push_back(curve);
 			isCurveClosed.push_back(!breakUpClosedCurves);

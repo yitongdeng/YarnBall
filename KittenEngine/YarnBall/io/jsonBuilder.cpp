@@ -30,13 +30,16 @@ namespace YarnBall {
 					transform[j][i] = t[i][j].asFloat();
 		}
 
+		bool resample = !root["resampleLength"].isNull();
+		bool breakUpClosedCurves = root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool();
+
 		// If ends with .poly
 		if (dataPath.size() > 5 && dataPath.substr(dataPath.size() - 5) == ".poly")
-			sim = readFromPoly(dataPath, root["resampleLength"].asFloat(), transform,
-				root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool());
+			sim = readFromPoly(dataPath, root["resampleLength"].asFloat(), transform, breakUpClosedCurves, resample);
+		else if (dataPath.size() > 4 && dataPath.substr(dataPath.size() - 4) == ".obj")
+			sim = readFromOBJ(dataPath, root["resampleLength"].asFloat(), transform, resample);
 		else
-			sim = readFromBCC(dataPath, root["resampleLength"].asFloat(), transform,
-				root["breakUpClosedCurves"].isNull() ? false : root["breakUpClosedCurves"].asBool());
+			sim = readFromBCC(dataPath, root["resampleLength"].asFloat(), transform, breakUpClosedCurves, resample);
 
 		if (!root["curveRadius"].isNull()) {
 			float r = root["curveRadius"].asFloat();
