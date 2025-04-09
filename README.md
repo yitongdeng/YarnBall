@@ -48,7 +48,7 @@ The CLI contains some basic functionality for simulating and exporting scenes.
 
 ![Gui](images/gui.gif)
 
-By default, the CLI launches a GUI for visualization and additional controls. This behavior can be overridden with the ```--headless``` flag. 
+By default, the CLI launches a GUI for visualization and additional controls. Left click to move. Right click to pan. Scroll to zoom. Space to pause/unpause. Additionally, the GUI can be turned off with the ```--headless``` flag. 
 
 Run ``` Gui.exe -help``` to see other availible flags.
 ```
