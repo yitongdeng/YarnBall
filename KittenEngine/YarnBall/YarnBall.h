@@ -202,7 +202,7 @@ namespace YarnBall {
 		void rebuildCUDAGraph();
 	};
 
-	Sim* readFromOBJ(std::string path, float targetSegLen, mat4 transform, bool allowResample = true);
+	Sim* readFromOBJ(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves = false, bool allowResample = true);
 	Sim* readFromBCC(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves = false, bool allowResample = true);
 	Sim* readFromPoly(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves = false, bool allowResample = true);
 	Sim* buildFromJSON(std::string path);

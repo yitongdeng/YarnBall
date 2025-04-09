@@ -37,7 +37,7 @@ namespace YarnBall {
 		if (dataPath.size() > 5 && dataPath.substr(dataPath.size() - 5) == ".poly")
 			sim = readFromPoly(dataPath, root["resampleLength"].asFloat(), transform, breakUpClosedCurves, resample);
 		else if (dataPath.size() > 4 && dataPath.substr(dataPath.size() - 4) == ".obj")
-			sim = readFromOBJ(dataPath, root["resampleLength"].asFloat(), transform, resample);
+			sim = readFromOBJ(dataPath, root["resampleLength"].asFloat(), transform, breakUpClosedCurves, resample);
 		else
 			sim = readFromBCC(dataPath, root["resampleLength"].asFloat(), transform, breakUpClosedCurves, resample);
 

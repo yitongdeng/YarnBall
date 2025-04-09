@@ -97,7 +97,7 @@ namespace YarnBall {
 		return createFromCurves(curves, isCurveClosed, numVerts);
 	}
 
-	Sim* readFromOBJ(std::string path, float targetSegLen, mat4 transform, bool allowResample) {
+	Sim* readFromOBJ(std::string path, float targetSegLen, mat4 transform, bool breakUpClosedCurves, bool allowResample) {
 		ifstream file(path);
 		if (!file.is_open())
 			throw std::runtime_error("Could not open file.");
@@ -132,8 +132,14 @@ namespace YarnBall {
 		for (auto& line : lines) {
 			vector<vec3> curve;
 			curve.reserve(line.size());
+			bool closed = line.front() == line.back();
 			for (int index : line)
 				curve.push_back(vertices[index - 1]);
+
+			if (breakUpClosedCurves && closed) {
+				curve.pop_back();
+				closed = false;
+			}
 
 			if (allowResample)
 				curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
@@ -141,7 +147,7 @@ namespace YarnBall {
 			if (curve.size() < 4) continue;
 			numVerts += curve.size();
 			curves.push_back(curve);
-			isCurveClosed.push_back(false);
+			isCurveClosed.push_back(closed);
 		}
 
 		return createFromCurves(curves, isCurveClosed, numVerts);
