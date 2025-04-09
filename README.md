@@ -45,7 +45,12 @@ Curves can be provided with [.bcc](https://www.cemyuksel.com/cyCodeBase/soln/usi
 
 ### CLI
 The CLI contains some basic functionality for simulating and exporting scenes.
-Run ``` Gui.exe -help``` to see availible flags.
+
+![Gui](images/gui.gif)
+
+By default, the CLI launches a GUI for visualization and additional controls. This behavior can be overridden with the ```--headless``` flag. 
+
+Run ``` Gui.exe -help``` to see other availible flags.
 ```
 YarnBall: High performance Cosserat Rods simulation.
 Usage: C:\Workspace\Yarn\YarnBall\x64\Release\Gui.exe [OPTIONS] [filename]
@@ -78,8 +83,47 @@ Gui.exe configs\cable_work_pattern.json --export --twist -s -n 750
 ```
 
 ### C++ interface
-The C++ interface includes everything under the YarnBall namespace and is placed in its own vs project, "YarnBall".
+The C++ interface includes everything under the YarnBall namespace and is placed under its separate VS project, "YarnBall".
 See [YarnBall.h](KittenEngine/YarnBall/YarnBall.h) for availible functions and [jsonBuilder.cpp](KittenEngine/YarnBall/io/jsonBuilder.cpp) for sample usage.
+
+To use the simulator, first create a ```YarnBall::Sim``` object with the predetermined number of vertices. 
+Once created, vertex positions can be populated within the ```sim->verts``` array. 
+
+To create static vertices, simply set ```sim->verts[i].invMass = 0```. In YarnBall, vertex_i is automatically connected with verteix_{i+1} to form segments.
+To create breaks into multiple distinct yarn pieces, unset ```VertexFlags::hasNext``` in the bit flag ```sim->verts[i].flags```. 
+This can be accomplished by simply setting the entire flag to 0. The rest of the bit flags are automatically populated after ```configure()```. 
+
+Once done, call ```configure()```. ```configure()``` will automatically populate the proper flags, segment orientations, and rest shapes. 
+Simulation can then be done by calling ```sim->advance(1/30.f)``` with the desired frame time. 
+
+Note: The data is passed off to the GPU after ```configure()```. As such, any simulation results will need to call ```download()``` for them to be reflected in ```sim->verts```.
+Conversely, any changes to ```sim->verts``` needs to call ```upload()``` to take effect. 
+
+For example, the following code creates and simulates 5 seconds of two small pieces of stiff curved yarn. 
+```
+constexpr int numVerts = 64;
+auto sim = new YarnBall::Sim(numVerts);
+const float segLen = 0.002f;
+
+for (int i = 0; i < 32; i++) {
+	vec3 pos = vec3(0.00002f * i * (i - 16) + segLen * 1, -segLen * i, 0);
+	sim->verts[i].pos = pos;
+	pos.x *= -1;
+	sim->verts[i + 32].pos = pos;
+}
+
+sim->verts[0].invMass = sim->verts[32].invMass = sim->verts[63].invMass = 0;
+sim->verts[31].flags = 0;
+sim->meta.kCollision = 1e-7;
+sim->configure();
+sim->setKBend(1e-8);
+sim->setKStretch(2e-2);
+sim->maxH = 1e-3;
+sim->upload();
+
+sim->advance(5.f);
+```
+See [jsonBuilder.cpp](KittenEngine/YarnBall/io/jsonBuilder.cpp) for more availible controls and settings. 
 
 ## License
 Unless otherwise stated in the file header, the contents of this repository are provided under the following license. Files that specify a different copyright are governed by the terms indicated therein.
