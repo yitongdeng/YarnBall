@@ -1,3 +1,6 @@
+
+// Jerry Hsu, jerry.hsu.research@gmail.com, 2025
+
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include "../YarnBall.h"

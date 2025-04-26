@@ -1,3 +1,6 @@
+
+// Jerry Hsu, jerry.hsu.research@gmail.com, 2025
+
 #pragma once
 
 #include <glm/glm.hpp>
