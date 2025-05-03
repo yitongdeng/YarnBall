@@ -1,6 +1,6 @@
 # YarnBall Sim: A high performance yarn simulator
 
-A massively parallel GPU implementation of the paper ["Stable Cosserat Rods" SIGGRAPH 2025](https://s2025.siggraph.org/), [Jerry Hsu](https://jerryhsu.io), Tongtong Wang, Kui Wu, and Cem Yuksel. 
+A massively parallel GPU implementation of the paper ["Stable Cosserat Rods" SIGGRAPH 2025](https://jerryhsu.io/projects/StableCosseratRods/), [Jerry Hsu](https://jerryhsu.io), Tongtong Wang, Kui Wu, and Cem Yuksel. 
 
 This repository contains the source code, model, and paramters for the yarn twisting and yarn letter examples.
 
