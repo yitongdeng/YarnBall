@@ -112,9 +112,9 @@ namespace YarnBall {
 			iss >> prefix;
 
 			if (prefix == "v") {
-				float x, y, z;
-				iss >> x >> y >> z;
-				vertices.emplace_back(x, y, z);
+				vec3 pos;
+				iss >> pos.x >> pos.y >> pos.z;
+				vertices.push_back(vec3(transform * vec4(pos, 1)));
 			}
 			else if (prefix == "l") {
 				std::vector<int> lineIndices;
