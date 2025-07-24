@@ -1,0 +1,52 @@
+{
+    "curveFile": "configs/models/combined.obj",
+    "curveRadius": 0.0015,
+    "fixVertex": [
+        [
+            0.0,
+            0.0,
+            0.0
+        ]
+    ],
+    "transform": [
+        [
+            1,
+            0,
+            0,
+            0
+        ],
+        [
+            0,
+            1,
+            0,
+            0
+        ],
+        [
+            0,
+            0,
+            1,
+            0
+        ]
+    ],
+    "simulation": {
+        "density": 0.001,
+        "frictionCoeff": 0.1,
+        "kStretch": 2.0,
+        "kBend": 10.0,
+        "kCollision": 0.0002,
+        "kFriction": 5,
+        "damping": 0.001,
+        "gravity": [
+            0,
+            -9.8,
+            0
+        ],
+        "drag": 0.0,
+        "maxTimeStep": 0.0004,
+        "numIterations": 4,
+        "detectionPeriod": 4,
+        "detectionScaler": 1.1,
+        "stepLimit": true,
+        "velStepLimit": true
+    }
+}

@@ -241,7 +241,9 @@ namespace YarnBall {
 
 			if (curve.size() < 4) continue;
 			printf("Found open curve with %zd points from %d to %d\n", curve.size(), i + 1, curI + 1);
-			curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
+			if (allowResample)
+				curve = Resample::resampleCMR(curve, 1, curve.size() - 2, targetSegLen);
+				printf("Resampled curve with %zd points\n", curve.size());
 			numVerts += curve.size();
 			curves.push_back(curve);
 			isCurveClosed.push_back(false);

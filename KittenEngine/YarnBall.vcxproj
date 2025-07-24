@@ -55,7 +55,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.8.props" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.9.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -132,12 +132,13 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <OpenMPSupport>true</OpenMPSupport>
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/Zc:__cplusplus %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,6 +147,7 @@
     </Link>
     <CudaCompile>
       <AdditionalCompilerOptions>-openmp</AdditionalCompilerOptions>
+      <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" --extended-lambda %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
     <PostBuildEvent>
       <Command>
@@ -398,36 +400,25 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.8.targets" />
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.9.targets" />
   </ImportGroup>
-
-	<Target Name="CopyResources" AfterTargets="Build">
-		<!-- Create the output folders -->
-		<MakeDir Directories="$(OutDir)resources" />
-		<MakeDir Directories="$(OutDir)configs" />
-		<MakeDir Directories="$(OutDir)KittenEngine\fonts" />
-		<MakeDir Directories="$(OutDir)KittenEngine\shaders" />
-		<MakeDir Directories="$(OutDir)frames" />
-
-		<!-- Recursively copy resources -->
-		<ItemGroup>
-			<Resources Include="$(ProjectDir)resources\**\*" />
-			<Configs Include="$(ProjectDir)configs\**\*" />
-			<Fonts Include="$(ProjectDir)KittenEngine\fonts\**\*" />
-			<Shaders Include="$(ProjectDir)KittenEngine\shaders\**\*" />
-		</ItemGroup>
-
-		<Copy SourceFiles="@(Resources)"
-			  DestinationFiles="@(Resources->'$(OutDir)resources\%(RecursiveDir)%(Filename)%(Extension)')"
-			  SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(Configs)"
-			  DestinationFiles="@(Configs->'$(OutDir)configs\%(RecursiveDir)%(Filename)%(Extension)')"
-			  SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(Fonts)"
-			  DestinationFiles="@(Fonts->'$(OutDir)KittenEngine\fonts\%(RecursiveDir)%(Filename)%(Extension)')"
-			  SkipUnchangedFiles="true" />
-		<Copy SourceFiles="@(Shaders)"
-			  DestinationFiles="@(Shaders->'$(OutDir)KittenEngine\shaders\%(RecursiveDir)%(Filename)%(Extension)')"
-			  SkipUnchangedFiles="true" />
-	</Target>
+  <Target Name="CopyResources" AfterTargets="Build">
+    <!-- Create the output folders -->
+    <MakeDir Directories="$(OutDir)resources" />
+    <MakeDir Directories="$(OutDir)configs" />
+    <MakeDir Directories="$(OutDir)KittenEngine\fonts" />
+    <MakeDir Directories="$(OutDir)KittenEngine\shaders" />
+    <MakeDir Directories="$(OutDir)frames" />
+    <!-- Recursively copy resources -->
+    <ItemGroup>
+      <Resources Include="$(ProjectDir)resources\**\*" />
+      <Configs Include="$(ProjectDir)configs\**\*" />
+      <Fonts Include="$(ProjectDir)KittenEngine\fonts\**\*" />
+      <Shaders Include="$(ProjectDir)KittenEngine\shaders\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(Resources)" DestinationFiles="@(Resources->'$(OutDir)resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(Configs)" DestinationFiles="@(Configs->'$(OutDir)configs\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(Fonts)" DestinationFiles="@(Fonts->'$(OutDir)KittenEngine\fonts\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(Shaders)" DestinationFiles="@(Shaders->'$(OutDir)KittenEngine\shaders\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
