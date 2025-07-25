@@ -53,6 +53,18 @@ namespace YarnBall {
 		double kStretch = 5e5;
 		double kBend = 1e-1;
 		if (!simRoot.isNull()) {
+			// Intrinsic frame
+			bool frenet = !root["frenetQ"].isNull();
+			printf("Frenet frame supplied? %d\n", frenet);
+			if (frenet) {
+				auto frenetQ = root["frenetQ"];
+				for (int i = 0; i < sim->meta.numVerts; i++) {
+					auto frenetQi = frenetQ[i];
+					sim->qs[i] = Kit::Rotor(vec4(frenetQi[0].asFloat(), frenetQi[1].asFloat(), frenetQi[2].asFloat(), frenetQi[3].asFloat()));
+					printf("q for %i: (%f, %f, %f, %f)\n", i, sim->qs[i].v[0], sim->qs[i].v[1], sim->qs[i].v[2], sim->qs[i].v[3]);
+				}
+			}
+
 			// Material
 			if (!simRoot["density"].isNull())
 				density = simRoot["density"].asFloat();

@@ -24,6 +24,8 @@
 				  [   0, 1,    0,  0],
 				  [   0,    0, 1,  0]],
 
+	"frenetQ": [[0.1, 0.2, 0.4, 0.9]],
+
 	"simulation": {
 		// ===== Material ===== 
 		"density": 1e-3,		// Density of the curve in kg/meter
