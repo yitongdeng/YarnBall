@@ -242,6 +242,15 @@ namespace Kitten {
 
 	template <typename T>
 	KITTEN_FUNC_DECL void print(RotorX<T> v, const char* format = "%.4f") {
+		mat3 rot_mat = v.matrix();
+		printf("Rotation Matrix: \n");
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				printf(format, rot_mat[j][i]);
+				if (j != 2) printf(", "); else printf("\n");
+			}
+		}
+		
 		printf("{");
 		for (int i = 0; i < 4; i++) {
 			printf(format, v[i]);

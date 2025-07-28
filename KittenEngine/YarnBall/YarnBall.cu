@@ -136,7 +136,13 @@ namespace YarnBall {
 				t = normalize(vec4(t.x, 0, 0, t.w));
 				lastQ = qq * t;
 
-				/*lastQ = qs[i];*/
+				vec3 tmp = normalize(seg0);
+				printf("Segment: (%f, %f, %f)\n", tmp[0], tmp[1], tmp[2]);
+				printf("Bishop Frame: \n");
+				Kit::print(lastQ);
+				lastQ = qs[i];
+				printf("Modified Frenet Frame: \n");
+				Kit::print(lastQ);
 
 				mass += v.lRest;
 
