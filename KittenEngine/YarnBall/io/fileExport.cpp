@@ -67,10 +67,6 @@ namespace YarnBall {
 		download();
 		FILE* pFile;
 		pFile = fopen(path.c_str(), "w");
-		//std::size_t insertPos = path.size() - 4;
-		//std::string filename = path.substr(0, insertPos) + "hi" + path.substr(insertPos);
-		//pFile = fopen(filename.c_str(), "w");
-		//printf("Filename %s\n", filename.c_str());
 
 		if (pFile == NULL) {
 			std::cout << "Error opening file" << std::endl;
@@ -116,25 +112,32 @@ namespace YarnBall {
 		fprintf(pFile, "# YarnBall Sim\n\n");
 		fprintf(pFile, "o YarnBall\n\n");
 		fprintf(pFile, "# Vertices (in meters)\n");
-		for (size_t i = 0; i < meta.numVerts; i++)
-			fprintf(pFile, "v %.16f %.16f %.16f\n", verts[i].pos.x, verts[i].pos.y, verts[i].pos.z);
-		fprintf(pFile, "\n# Curves\n");
-
-		// Parse segments
-		lastSeg = false;
+		float scale = 0.01;
 		for (size_t i = 0; i < meta.numVerts; i++) {
-			bool seg = (verts[i].flags & (uint32_t)VertexFlags::hasNext) != 0;
-			if (seg) {
-				if (!lastSeg) {
-					fprintf(pFile, "l %d", i + 1);
-				}
-				fprintf(pFile, " %d", i + 2);
-			}
-			else if (lastSeg) {
-				fprintf(pFile, "\n");
-			}
-			lastSeg = seg;
+			mat3 rot_mat_i = qs[i].matrix();
+			vec3 e1_i = verts[i].pos + scale * vec3(rot_mat_i[0][0], rot_mat_i[1][0], rot_mat_i[2][0]);
+			fprintf(pFile, "v %.16f %.16f %.16f\n", verts[i].pos.x, verts[i].pos.y, verts[i].pos.z);
+			//printf("v %.16f %.16f %.16f\n", verts[i].pos.x, verts[i].pos.y, verts[i].pos.z);
+			fprintf(pFile, "v %.16f %.16f %.16f\n", e1_i.x, e1_i.y, e1_i.z);
+			//printf("v %.16f %.16f %.16f\n", e1_i.x, e1_i.y, e1_i.z);
 		}
+		//fprintf(pFile, "\n# Curves\n");
+
+		//// Parse segments
+		//lastSeg = false;
+		//for (size_t i = 0; i < meta.numVerts; i++) {
+		//	bool seg = (verts[i].flags & (uint32_t)VertexFlags::hasNext) != 0;
+		//	if (seg) {
+		//		if (!lastSeg) {
+		//			fprintf(pFile, "l %d", i + 1);
+		//		}
+		//		fprintf(pFile, " %d", i + 2);
+		//	}
+		//	else if (lastSeg) {
+		//		fprintf(pFile, "\n");
+		//	}
+		//	lastSeg = seg;
+		//}
 
 		fclose(pFile);
 	}
