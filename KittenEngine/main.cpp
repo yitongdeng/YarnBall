@@ -125,7 +125,7 @@ void performSim() {
 	float measuredTime = timer.time();
 
 	if (exportSim) {
-		static int frameID = 0;
+		static int frameID = 1;
 		if (frameID > exportLimit) {
 			exportSim = false;
 			simulate = false;
@@ -371,6 +371,8 @@ int main(int argc, char** argv) {
 	}
 
 	loadSim(config.c_str());
+	// write once after loading
+	sim->exportToOBJ(exportPath + to_string(0) + ".obj");
 
 	if (headlessMode) {
 		exitWhenDone = true;
