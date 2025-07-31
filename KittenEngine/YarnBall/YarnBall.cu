@@ -140,9 +140,15 @@ namespace YarnBall {
 				printf("Segment: (%f, %f, %f)\n", tmp[0], tmp[1], tmp[2]);
 				printf("Bishop Frame: \n");
 				Kit::print(lastQ);
-				lastQ = qs[i];
-				printf("Modified Frenet Frame: \n");
+				
+
+				lastQ = lastQ * Kit::Rotor(vec4(cos(1.4), 0., 0., sin(1.4)));
+				printf("Bishop Frame perturbed: \n");
 				Kit::print(lastQ);
+
+				//lastQ = qs[i];
+				//printf("Modified Frenet Frame: \n");
+				//Kit::print(lastQ);
 
 				mass += v.lRest;
 

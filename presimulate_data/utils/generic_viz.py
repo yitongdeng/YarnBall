@@ -244,9 +244,10 @@ def visualize_spline_derivatives(x_fine, y_fine, z_fine, base_label, x_prime_fin
     slider.on_changed(update)
 
     plt.tight_layout()
-    plt.show()
     if title is not None:
         plt.savefig(title + ".png")
+    else:
+        plt.show()
 
 def compare_spline_derivatives(x_fine, y_fine, z_fine, spline_title, x_prime_fine, y_prime_fine, z_prime_fine, prime_title, x_second_fine, y_second_fine, z_second_fine, second_title, x_third_fine, y_third_fine, z_third_fine, third_title, \
                                x_fine_2, y_fine_2, z_fine_2, spline_title_2, x_prime_fine_2, y_prime_fine_2, z_prime_fine_2, prime_title_2, x_second_fine_2, y_second_fine_2, z_second_fine_2, second_title_2, x_third_fine_2, y_third_fine_2, z_third_fine_2, third_title_2, \
@@ -450,9 +451,10 @@ def compare_spline_derivatives(x_fine, y_fine, z_fine, spline_title, x_prime_fin
     slider.on_changed(update)
 
     plt.tight_layout()
-    plt.show()
     if title is not None:
         plt.savefig(title + ".png")
+    else:
+        plt.show()
 
 def visualize_comb(x_fine, y_fine, z_fine, magnitude, vector, label= "Curvature",title=None):
     # Curvature comb visualization

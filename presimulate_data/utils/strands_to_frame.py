@@ -15,12 +15,15 @@ def strands_to_frame(x_arr, y_arr, z_arr, args):
     e_1_arr = []
     e_2_arr = []
     e_3_arr = []
+    t_arr = []
     curvature_arr = []
     torsion_arr = []
+    v_arr = []
     quintic_torsion_arr = []
     unsmooth_torsion_arr = []
     
     for x, y, z in tqdm.tqdm(zip(x_arr, y_arr, z_arr), total=len(x_arr), desc="Processing strands"):
+        # TODO: Does the resampling include end points (does linspace include end points?)
         quintic_torsion_arr.append(get_quintic_torsion(x, y, z))
         
         x, y, z = fft_smooth(x, y, z, args.smoothing_dct_cutoff)
@@ -42,7 +45,7 @@ def strands_to_frame(x_arr, y_arr, z_arr, args):
             x_prime_fine, y_prime_fine, z_prime_fine, t_fine, 3, threshold_factor=2.0, base_sigma=1.0, max_sigma=4.0, verbose=args.verbose)
         x_prime_fine, y_prime_fine, z_prime_fine = smooth_vector_components(
             np.stack([x_prime_fine, y_prime_fine, z_prime_fine], axis=1), t_fine, sigma=len(t_fine) * .05, component_name="first derivative", visualize_all=args.visualize_all, verbose=args.verbose).T
- 
+
         # Evaluate second derivative and smooth
         x_second_fine, y_second_fine, z_second_fine = evaluate_spline_derivatives( x_prime_cs, y_prime_cs, z_prime_cs, t_fine)
         x_second_fine, y_second_fine, z_second_fine, x_second_cs, y_second_cs, z_second_cs = fix_discontinuities(
@@ -57,20 +60,17 @@ def strands_to_frame(x_arr, y_arr, z_arr, args):
         # Get Frenet frame and curvature/torsion
         e_1, e_2, e_3, curvature, torsion = get_frenet_frame(x_fine, y_fine, z_fine, x_prime_fine, y_prime_fine, z_prime_fine, x_second_fine, y_second_fine, z_second_fine, t_fine, args.visualize_all)
         unsmooth_torsion_arr.append(torsion)
-        
-        # Apply smoothing to e_1 components separately
-        e_1_smoothed = smooth_vector_components(e_1, t_fine, sigma=len(t_fine) * .05, component_name="e_1", visualize_all=args.visualize_all)
-        e_2_smoothed = smooth_vector_components(e_2, t_fine, sigma=len(t_fine) * .05, component_name="e_2", visualize_all=args.visualize_all)
-        e_3_smoothed = smooth_vector_components(e_3, t_fine, sigma=len(t_fine) * .05, component_name="e_3", visualize_all=args.visualize_all)
-        
-        v = np.stack([x_prime_fine, y_prime_fine, z_prime_fine], axis=1)
-        #smoothed_curvature, smoothed_torsion = smooth_curvature_torsion(e_1_smoothed, e_2_smoothed, e_3_smoothed, t_fine, v)
+ 
+        v = np.linalg.norm(np.stack([x_prime_fine, y_prime_fine, z_prime_fine], axis=1), axis = -1)
+
         e_1_arr.append(e_1)
         e_2_arr.append(e_2)
         e_3_arr.append(e_3)
         curvature_arr.append(curvature)
         torsion_arr.append(torsion)
-    return e_1_arr, e_2_arr, e_3_arr, curvature_arr, torsion_arr
+        v_arr.append(v)
+        t_arr.append(t_fine)
+    return e_1_arr, e_2_arr, e_3_arr, curvature_arr, torsion_arr, v_arr, t_arr
         
 if __name__ == "__main__":
     args = parseArgs("Helix Generation")
@@ -79,7 +79,7 @@ if __name__ == "__main__":
     
     x_arr, y_arr, z_arr = load_strands(args.load_path, args.n_strands_to_load)
     
-    e_1_arr, e_2_arr, e_3_arr, curvature_arr, torsion_arr = strands_to_frame(x_arr, y_arr, z_arr, args)
+    e_1_arr, e_2_arr, e_3_arr, curvature_arr, torsion_arr, v_arr = strands_to_frame(x_arr, y_arr, z_arr, args)
     
     if args.save_np:
         # Save results

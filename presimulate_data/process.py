@@ -24,6 +24,55 @@ def write_obj_file_list(list_of_vertices, filename="output.obj"):
             f.write("\n")
             vertices_count += vertices.shape[0]
 
+# during integration we assume kappa[i] is constant in the duration t[i] to t[i+1]
+def integrate_tangent(e1, speed, t, x0):
+    num_steps = e1.shape[0]-1
+    xs = [x0]
+    #
+    for i in range(num_steps):
+        h = t[i+1] - t[i]
+        speed_i = speed[i]
+        e1_i = e1[i]
+        # x
+        x_next = xs[-1] + h * speed_i * e1_i
+        xs.append(x_next)
+
+    return np.stack(xs, axis = 0)
+
+# during integration we assume kappa[i] is constant in the duration t[i] to t[i+1]
+def integrate_frenet_serret(kappa, tau, speed, t, F0, x0):
+    num_steps = kappa.shape[0]-1
+    print(F0)
+    Fs = [F0]
+    xs = [x0]
+    #
+    for i in range(num_steps):
+        h = t[i+1] - t[i]
+        kappa_i = kappa[i]
+        tau_i = tau[i]
+        speed_i = speed[i]
+        #
+        T = Fs[-1][:, 0]
+        B = Fs[-1][:, 2]
+        omega = speed_i * (tau_i * T + kappa_i * B)
+        displacement = h * omega
+        angle = np.linalg.norm(displacement)
+        if angle > 1.e-6:
+            axis = displacement / angle
+            skew = np.array([[0,-axis[2],axis[1]],
+                        [axis[2],0,-axis[0]],
+                        [-axis[1],axis[0],0]])
+            R = (np.eye(3)+np.sin(angle)*skew + (1-np.cos(angle))*skew@skew)
+        else:
+            R = np.eye(3)
+        F_next = R @ Fs[-1]
+        Fs.append(F_next)
+        # x
+        x_next = xs[-1] + h * speed_i * F_next[:, 0]
+        xs.append(x_next)
+
+    return np.stack(Fs, axis = 0), np.stack(xs, axis = 0)
+
 # Process strands
 n = 1
 num_selected = n**2
@@ -36,7 +85,25 @@ args.n_fine_sampling = poss.shape[1]
 if not os.path.exists(args.save_path):
     os.makedirs(args.save_path)
 x_fine_arr, y_fine_arr, z_fine_arr = evaluate_spline_batch(x_arr, y_arr, z_arr, args.n_fine_sampling)
-e_1_arr, e_2_arr, e_3_arr, curvature_arr, torsion_arr = strands_to_frame(x_arr, y_arr, z_arr, args)
+e_1_arr, e_2_arr, e_3_arr, curvature_arr, torsion_arr, v_arr, t_arr = strands_to_frame(x_arr, y_arr, z_arr, args)
+
+# reconstruction
+poss_recon = []
+for i, (curvature, torsion, speed, x, y, z, e_1, e_2, e_3, t) in enumerate(zip(curvature_arr, torsion_arr, v_arr, x_fine_arr, y_fine_arr, z_fine_arr, e_1_arr, e_2_arr, e_3_arr, t_arr)):
+    t *= 5.9
+    # F, x = integrate_frenet_serret(kappa=curvature, tau=torsion, speed=speed, t=t, 
+    #         F0 = np.hstack([e_1[0].reshape(-1, 1), e_2[0].reshape(-1, 1), e_3[0].reshape(-1, 1)]), x0 = np.array([x[0], y[0], z[0]]))
+    x = integrate_tangent(e1 = e_1, speed=speed, t=t, x0 = np.array([x[0], y[0], z[0]]))
+    poss_recon.append(x)
+poss_recon = np.array(poss_recon)
+# print(poss_recon.shape)
+# for i in range(len(e_1_arr[0])):
+#     print(np.linalg.norm(np.cross((poss_recon[0, 1:] - poss_recon[0, :-1])[i], e_1_arr[0][i])))
+# #print(e_1_arr[0])
+# exit()
+
+poss = 10 * poss_recon #IMPORTANT
+#1poss = poss
 
 q_arr = []
 for i, (e_1s, e_2s, e_3s) in enumerate(zip(e_1_arr, e_2_arr, e_3_arr)):
