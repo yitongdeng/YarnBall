@@ -116,9 +116,6 @@ namespace YarnBall {
 		float scale = 0.01;
 		for (size_t i = 0; i < meta.numVerts; i++) {
 			mat3 rot_mat_i = qs[i].matrix();
-			//vec3 e1_i = verts[i].pos + scale * vec3(rot_mat_i[0][0], rot_mat_i[1][0], rot_mat_i[2][0]);
-			//vec3 e2_i = verts[i].pos + scale * vec3(rot_mat_i[0][1], rot_mat_i[1][1], rot_mat_i[2][1]);
-			//vec3 e3_i = verts[i].pos + scale * vec3(rot_mat_i[0][2], rot_mat_i[1][2], rot_mat_i[2][2]);
 			vec3 e1_i = verts[i].pos + scale * vec3(rot_mat_i[0][0], rot_mat_i[0][1], rot_mat_i[0][2]);
 			vec3 e2_i = verts[i].pos + scale * vec3(rot_mat_i[1][0], rot_mat_i[1][1], rot_mat_i[1][2]);
 			vec3 e3_i = verts[i].pos + scale * vec3(rot_mat_i[2][0], rot_mat_i[2][1], rot_mat_i[2][2]);
