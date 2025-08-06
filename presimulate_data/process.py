@@ -62,8 +62,8 @@ qs = np.array(qs)
 with open('template.json', 'r') as f:
     cfg = json5.load(f)
 
-# 3 . replace the field
-cfg["fixVertex"] = offset.reshape(-1, 3).tolist()      # shape (N, 3) → list‑of‑lists
+# 3 . replace the field --> fix the first two vertices of each strand
+cfg["fixVertex"] = poss[:, :2, :].reshape(-1, 3).tolist()      # shape (N, 3) → list‑of‑lists
 
 cfg["ext_q"] = qs.tolist()      # shape (N, 3) → list‑of‑lists
 
