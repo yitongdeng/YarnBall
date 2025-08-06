@@ -141,6 +141,7 @@ void performSim() {
 			if (exportFiberLevel) sim->exportFiberMesh(exportPath + to_string(frameID) + ".obj");
 			else if (exportBCC) sim->exportToBCC(exportPath + to_string(frameID) + ".bcc", false);
 			else sim->exportToOBJ(exportPath + to_string(frameID) + ".obj");
+			printf("Exporting frame:%i\n", frameID);
 		frameID++;
 	}
 

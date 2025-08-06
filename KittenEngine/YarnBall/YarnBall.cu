@@ -136,15 +136,15 @@ namespace YarnBall {
 				t = normalize(vec4(t.x, 0, 0, t.w));
 				lastQ = qq * t;
 
-				vec3 tmp = normalize(seg0);
+				/*vec3 tmp = normalize(seg0);
 				printf("Segment: (%f, %f, %f)\n", tmp[0], tmp[1], tmp[2]);
 				printf("Bishop Frame: \n");
-				Kit::print(lastQ);				
+				Kit::print(lastQ);	*/			
 
 				if (meta.use_ext_q) {
 					lastQ = qs[i];
-					printf("Replacing with ext supplied Frame: \n");
-					Kit::print(lastQ);
+					//printf("Replacing with ext supplied Frame: \n");
+					//Kit::print(lastQ);
 				}
 
 				mass += v.lRest;
@@ -154,7 +154,7 @@ namespace YarnBall {
 			}
 			qs[i] = lastQ;
 
-			printf("q for %i: (%f, %f, %f, %f)\n", i, qs[i].v[0], qs[i].v[1], qs[i].v[2], qs[i].v[3]);
+			//printf("q for %i: (%f, %f, %f, %f)\n", i, qs[i].v[0], qs[i].v[1], qs[i].v[2], qs[i].v[3]);
 
 			mass *= 0.5f * density;
 
@@ -167,9 +167,9 @@ namespace YarnBall {
 
 		// Init rest orientation
 		for (int i = 0; i < numVerts - 1; i++) {
-			printf("input qRest for %i: (%f, %f, %f, %f)\n", i, qRests[i][0], qRests[i][1], qRests[i][2], qRests[i][3]);
+			//printf("input qRest for %i: (%f, %f, %f, %f)\n", i, qRests[i][0], qRests[i][1], qRests[i][2], qRests[i][3]);
 			qRests[i] = length(qRests[i]) * (qs[i].inverse() * qs[i + 1]).v;
-			printf("qRest for %i: (%f, %f, %f, %f)\n", i, qRests[i][0], qRests[i][1], qRests[i][2], qRests[i][3]);
+			//printf("qRest for %i: (%f, %f, %f, %f)\n", i, qRests[i][0], qRests[i][1], qRests[i][2], qRests[i][3]);
 		}
 
 		// Mesh for rendering

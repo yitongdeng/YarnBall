@@ -98,7 +98,7 @@ def align_rod(positions, frames, target_frame=None):
     return pos_out, frame_out, Q
 
 if __name__ == "__main__": 
-    n_strands = 100
+    n_strands = 10000
 
     #
     logs_dir = "logs"
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     # Define parameter ranges
     param_bounds = np.array([
         [0.3, 0.7],                       # radius (m)
-        [0.01, 0.99], #[0.01, 1.0],       # curl frequency (m^-1)
+        [0.2, 0.99], #[0.01, 1.0],       # curl frequency (m^-1)
         [0.01, 0.3], # [0.1, 1.0]          # twist frequency (m^-1)
     ])
 
@@ -131,36 +131,43 @@ if __name__ == "__main__":
     frames = []
     taus = []
     for i, sample in enumerate(scaled_samples):
+        print(f"Working on {i}")
         r, f, tf = list(sample)
         strand_labels.append({'r': r, 'f': f, 'tf': tf})
         pos, theta = RodGenerator.example_rod(n, r, f, height_scale)
         pos, theta, tau = add_twist_tan(pos, theta, tf)
 
+        # TESTING PURPOSE ONLY
+        # straight_line = np.zeros_like(pos)
+        # straight_line[:, 0] = np.arange(pos.shape[0])
+        # pos = straight_line + 0.001 * np.random.randn(*straight_line.shape)
+
         pos_extrap = extrapolate_segment(pos)
         t = pos_extrap[1:]-pos_extrap[:-1]
         t = t / np.linalg.norm(t, axis=-1, keepdims = True)
         t = t[:, np.newaxis, :]
-        bishop = RodUtil.compute_bishop_frames(pos_extrap)
+        bishop = RodUtil.compute_bishop_frames(pos_extrap) # compute bishop
 
         material = RodUtil.compute_material_frames(theta=np.hstack([theta,theta[[-1]]]), bishop_frame=bishop)
  
-        nb = bishop
-        #nb = material
+        #nb = bishop
+        nb = material
         frame = np.concatenate([t, nb], axis=-2).transpose((0, 2, 1))
-
 
         # orthogonality check
         RTR = np.matmul(frame.transpose(0, 2, 1), frame)
         diff = RTR - np.eye(3)
-        print(f"for {i}, {np.linalg.norm(diff, axis = (-2, -1))}\n max diff:", np.max(np.linalg.norm(diff, axis = (-2, -1))))
-        exit()
+        max_diff = np.max(np.linalg.norm(diff, axis = (-2, -1)))
+        assert max_diff < 0.1, f"Not orthogonal for {i} with max diff: {max_diff}!"
 
         # is_orthogonal, no_reflection = is_proper_rotation(frame)
         #assert np.all(is_orthogonal & no_reflection), f"For {i},Is orthogonal:\n {np.matmul(frame.transpose(0, 2, 1), frame)}"
 
-        # align with some frame
-        R_random = R.random().as_matrix()          # one rotation
-        #print("R_random: ", R_random)
+        # NO ALIGNMENT
+        #pos_aligned, frame_aligned, align_rot = pos, frame, None 
+        
+        # WITH ALIGNMENT
+        R_random = R.random().as_matrix()          # target
         pos_aligned, frame_aligned, align_rot = align_rod(pos, frame, R_random)
         #
 

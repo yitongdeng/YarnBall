@@ -66,7 +66,7 @@ namespace YarnBall {
 				for (int i = 0; i < sim->meta.numVerts; i++) {
 					auto ext_qi = ext_q[i];
 					sim->qs[i] = Kit::Rotor(vec4(ext_qi[0].asFloat(), ext_qi[1].asFloat(), ext_qi[2].asFloat(), ext_qi[3].asFloat()));
-					printf("q for %i: (%f, %f, %f, %f)\n", i, sim->qs[i].v[0], sim->qs[i].v[1], sim->qs[i].v[2], sim->qs[i].v[3]);
+					//printf("q for %i: (%f, %f, %f, %f)\n", i, sim->qs[i].v[0], sim->qs[i].v[1], sim->qs[i].v[2], sim->qs[i].v[3]);
 				}
 			}
 			else{

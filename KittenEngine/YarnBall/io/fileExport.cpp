@@ -130,7 +130,7 @@ namespace YarnBall {
 		// Parse segments
 		lastSeg = false;
 		for (size_t i = 0; i < meta.numVerts * 2; i+=2) {
-			printf("i: %i\n", i);
+			//printf("i: %i\n", i);
 			fprintf(pFile_e1, "l %d %d\n", i + 1, i + 2);
 			fprintf(pFile_e2, "l %d %d\n", i + 1, i + 2);
 			fprintf(pFile_e3, "l %d %d\n", i + 1, i + 2);

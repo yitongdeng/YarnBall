@@ -24,19 +24,20 @@ def write_obj_file_list(list_of_vertices, filename="output.obj"):
             f.write("\n")
             vertices_count += vertices.shape[0]
 
-_poss = np.load("logs/sampled/poss.npy")[[92]]
-_frames = np.load("logs/sampled/frames.npy")[[92]]
+_poss = np.load("logs/sampled/poss.npy")
+_frames = np.load("logs/sampled/frames.npy")
 num_available = _poss.shape[0]
 # Process strands
 num_selected = num_available
 scale = 0.01
 frame_scale = 0.01
+offset_scale = 1
 
 # CUBE OFFSET
 cube_root = np.ceil(np.cbrt(num_selected))
 # 10 × 10 grid in the x‑ and y‑directions
 x, y, z = np.meshgrid(np.arange(cube_root), np.arange(cube_root), np.arange(cube_root), indexing='xy')   # x varies fastest, y slowest
-offset = np.stack((x,y,z), axis=-1).reshape(-1, 3)[:num_selected][:, np.newaxis, :]
+offset = offset_scale * np.stack((x,y,z), axis=-1).reshape(-1, 3)[:num_selected][:, np.newaxis, :]
 
 # LINE OFFSET
 # offset = np.arange(num_selected)
