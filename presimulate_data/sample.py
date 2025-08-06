@@ -138,9 +138,9 @@ if __name__ == "__main__":
         pos, theta, tau = add_twist_tan(pos, theta, tf)
 
         # TESTING PURPOSE ONLY
-        # straight_line = np.zeros_like(pos)
-        # straight_line[:, 0] = np.arange(pos.shape[0])
-        # pos = straight_line + 0.001 * np.random.randn(*straight_line.shape)
+        straight_line = np.zeros_like(pos)
+        straight_line[:, 0] = np.arange(pos.shape[0])
+        pos = straight_line# + 0.001 * np.random.randn(*straight_line.shape)
 
         pos_extrap = extrapolate_segment(pos)
         t = pos_extrap[1:]-pos_extrap[:-1]
@@ -150,8 +150,8 @@ if __name__ == "__main__":
 
         material = RodUtil.compute_material_frames(theta=np.hstack([theta,theta[[-1]]]), bishop_frame=bishop)
  
-        #nb = bishop
-        nb = material
+        nb = bishop
+        #nb = material
         frame = np.concatenate([t, nb], axis=-2).transpose((0, 2, 1))
 
         # orthogonality check
@@ -167,9 +167,9 @@ if __name__ == "__main__":
         #pos_aligned, frame_aligned, align_rot = pos, frame, None 
         
         # WITH ALIGNMENT
-        #pos_aligned, frame_aligned, align_rot = align_rod(pos, frame)
-        R_random = R.random().as_matrix()          # target
-        pos_aligned, frame_aligned, align_rot = align_rod(pos, frame, R_random)
+        pos_aligned, frame_aligned, align_rot = align_rod(pos, frame)
+        #R_random = R.random().as_matrix()          # target
+        #pos_aligned, frame_aligned, align_rot = align_rod(pos, frame, R_random)
         #
 
         poss.append(pos_aligned-pos_aligned[0])

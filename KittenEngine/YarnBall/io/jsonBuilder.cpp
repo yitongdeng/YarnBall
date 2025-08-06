@@ -57,7 +57,7 @@ namespace YarnBall {
 			if (!simRoot["fixStartOrientation"].isNull())
 				sim->meta.fix_start_orientation = simRoot["fixStartOrientation"].asBool() ? 1 : 0;
 
-			// Intrinsic frame
+			// Init frame
 			bool use_ext_q = !root["ext_q"].isNull();
 			printf("Ext q supplied? %d\n", use_ext_q);
 			if (use_ext_q) {
@@ -71,6 +71,21 @@ namespace YarnBall {
 			}
 			else{
 				sim->meta.use_ext_q = 0;
+			}
+
+			// Rest frame difference
+			bool use_ext_dq = !root["ext_dq"].isNull();
+			printf("Ext dq supplied? %d\n", use_ext_dq);
+			if (use_ext_dq) {
+				sim->meta.use_ext_dq = 1;
+				auto ext_dq = root["ext_dq"];
+				for (int i = 0; i < sim->meta.numVerts-1; i++) {
+					auto ext_dqi = ext_dq[i];
+					sim->qRests[i] = vec4(ext_dqi[0].asFloat(), ext_dqi[1].asFloat(), ext_dqi[2].asFloat(), ext_dqi[3].asFloat());
+				}
+			}
+			else {
+				sim->meta.use_ext_dq = 0;
 			}
 
 			// Material

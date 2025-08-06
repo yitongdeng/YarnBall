@@ -69,6 +69,21 @@ for i, frame in enumerate(frames_flat):
 
 qs = np.array(qs)
 
+dqs = []
+for i in range(qs.shape[0]-1):
+    q1 = R.from_quat(qs[i])
+    q2 = R.from_quat(qs[i+1])
+    dq = q1.inv() * q2
+    dqs.append(dq.as_quat())
+
+dqs = np.array(dqs)
+# TEST
+theta = 30 / 360 * 2 * np.pi
+about_x = np.array([np.sin(theta/2), 0., 0, np.cos(theta/2)]) # about x
+about_y = np.array([0, np.sin(theta/2), 0, np.cos(theta/2)]) # about y
+about_z = np.array([0., 0., np.sin(theta/2), np.cos(theta/2)]) # about z
+dqs[30] = about_z
+
 # process the json
 # # 1 . your (N, 3) NumPy array
 
@@ -81,6 +96,8 @@ with open('template.json', 'r') as f:
 cfg["fixVertex"] = poss[:, :2, :].reshape(-1, 3).tolist()      # shape (N, 3) → list‑of‑lists
 
 cfg["ext_q"] = qs.tolist()      # shape (N, 3) → list‑of‑lists
+
+cfg["ext_dq"] = dqs.tolist()      # shape (N, 3) → list‑of‑lists
 
 # 4 . write it back (standard json is fine for output if you don’t need comments)
 with open('my_hair.json', 'w') as f:

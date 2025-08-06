@@ -114,6 +114,7 @@ namespace YarnBall {
 		
 
 		int use_ext_q;
+		int use_ext_dq;
 		int fix_start_orientation;
 
 	} MetaData;

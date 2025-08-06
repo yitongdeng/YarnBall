@@ -166,10 +166,10 @@ namespace YarnBall {
 		}
 
 		// Init rest orientation
-		for (int i = 0; i < numVerts - 1; i++) {
-			//printf("input qRest for %i: (%f, %f, %f, %f)\n", i, qRests[i][0], qRests[i][1], qRests[i][2], qRests[i][3]);
-			qRests[i] = length(qRests[i]) * (qs[i].inverse() * qs[i + 1]).v;
-			//printf("qRest for %i: (%f, %f, %f, %f)\n", i, qRests[i][0], qRests[i][1], qRests[i][2], qRests[i][3]);
+		if (!meta.use_ext_dq) {
+			for (int i = 0; i < numVerts - 1; i++) {
+				qRests[i] = length(qRests[i]) * (qs[i].inverse() * qs[i + 1]).v;
+			}
 		}
 
 		// Mesh for rendering
