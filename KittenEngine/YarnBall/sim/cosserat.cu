@@ -219,7 +219,11 @@ namespace YarnBall {
 
 		// Update segment orientation
 		// This is done assuming some very very large invMoment (i.e. no inertia so static equilibrium)
-		if (!(bool)(v0.flags & (uint32_t)VertexFlags::fixOrientation) != 0 && (v0.flags & (uint32_t)VertexFlags::hasNext)) {
+		if (!(bool)(v0.flags & (uint32_t)VertexFlags::fixOrientation) != 0
+			&& (v0.flags & (uint32_t)VertexFlags::hasNext)
+			&& (!(bool)data->fix_start_orientation || (v0.flags & (uint32_t)VertexFlags::hasPrev)) // NOTE! my addition
+			) {
+
 			vec3 dx = dxs[tid];
 			vec3 p1 = verts[tid + 1].pos;
 			vec3 p1dx = dxs[tid + 1];

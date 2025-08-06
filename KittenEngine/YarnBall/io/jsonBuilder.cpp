@@ -53,6 +53,10 @@ namespace YarnBall {
 		double kStretch = 5e5;
 		double kBend = 1e-1;
 		if (!simRoot.isNull()) {
+			// whether to fix start point of each segment
+			if (!simRoot["fixStartOrientation"].isNull())
+				sim->meta.fix_start_orientation = simRoot["fixStartOrientation"].asBool() ? 1 : 0;
+
 			// Intrinsic frame
 			bool use_ext_q = !root["ext_q"].isNull();
 			printf("Ext q supplied? %d\n", use_ext_q);

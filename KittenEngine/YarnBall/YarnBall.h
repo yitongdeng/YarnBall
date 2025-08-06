@@ -114,6 +114,8 @@ namespace YarnBall {
 		
 
 		int use_ext_q;
+		int fix_start_orientation;
+
 	} MetaData;
 
 	class Sim {

@@ -27,6 +27,8 @@
 	// "frenetQ": [[0.1, 0.2, 0.4, 0.9]],
 
 	"simulation": {
+		"fixStartOrientation": true,
+
 		// ===== Material ===== 
 		"density": 100,		// Density of the curve in kg/meter
 		"frictionCoeff": 0.1,

@@ -22,6 +22,7 @@
         ]
     ],
     "simulation": {
+        "fixStartOrientation": true,
         "density": 100,
         "frictionCoeff": 0.1,
         "kStretch": 1000.0,
