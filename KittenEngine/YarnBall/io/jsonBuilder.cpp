@@ -54,15 +54,19 @@ namespace YarnBall {
 		double kBend = 1e-1;
 		if (!simRoot.isNull()) {
 			// Intrinsic frame
-			bool frenet = !root["frenetQ"].isNull();
-			printf("Frenet frame supplied? %d\n", frenet);
-			if (frenet) {
-				auto frenetQ = root["frenetQ"];
+			bool use_ext_q = !root["ext_q"].isNull();
+			printf("Ext q supplied? %d\n", use_ext_q);
+			if (use_ext_q) {
+				sim->meta.use_ext_q = 1;
+				auto ext_q = root["ext_q"];
 				for (int i = 0; i < sim->meta.numVerts; i++) {
-					auto frenetQi = frenetQ[i];
-					sim->qs[i] = Kit::Rotor(vec4(frenetQi[0].asFloat(), frenetQi[1].asFloat(), frenetQi[2].asFloat(), frenetQi[3].asFloat()));
+					auto ext_qi = ext_q[i];
+					sim->qs[i] = Kit::Rotor(vec4(ext_qi[0].asFloat(), ext_qi[1].asFloat(), ext_qi[2].asFloat(), ext_qi[3].asFloat()));
 					printf("q for %i: (%f, %f, %f, %f)\n", i, sim->qs[i].v[0], sim->qs[i].v[1], sim->qs[i].v[2], sim->qs[i].v[3]);
 				}
+			}
+			else{
+				sim->meta.use_ext_q = 0;
 			}
 
 			// Material

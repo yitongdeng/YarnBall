@@ -45,18 +45,28 @@ write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, pos
 write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, poss_flat+e2s_flat)], filename = os.path.join(out_dir, "e2.obj"))
 write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, poss_flat+e3s_flat)], filename = os.path.join(out_dir, "e3.obj"))
 
-# # process the json
-# # # 1 . your (N, 3) NumPy array
+# prepare quaternion representation of frame
+frames_flat = frames.reshape(-1, 3, 3)
+qs = []
+for i, frame in enumerate(frames_flat):
+    rotation = R.from_matrix(frame.T)
+    q = rotation.as_quat()
+    qs.append(q)
 
-# # 2 . read the existing file (it contains // comments, so use json5/commentjson)
-# with open('template.json', 'r') as f:
-#     cfg = json5.load(f)
+qs = np.array(qs)
 
-# # 3 . replace the field
-# cfg["fixVertex"] = coords.tolist()      # shape (N, 3) → list‑of‑lists
+# process the json
+# # 1 . your (N, 3) NumPy array
 
-# cfg["frenetQ"] = q_arr_flat.tolist()      # shape (N, 3) → list‑of‑lists
+# 2 . read the existing file (it contains // comments, so use json5/commentjson)
+with open('template.json', 'r') as f:
+    cfg = json5.load(f)
 
-# # 4 . write it back (standard json is fine for output if you don’t need comments)
-# with open('my_hair.json', 'w') as f:
-#     json.dump(cfg, f, indent=4)
+# 3 . replace the field
+cfg["fixVertex"] = offset.reshape(-1, 3).tolist()      # shape (N, 3) → list‑of‑lists
+
+cfg["ext_q"] = qs.tolist()      # shape (N, 3) → list‑of‑lists
+
+# 4 . write it back (standard json is fine for output if you don’t need comments)
+with open('my_hair.json', 'w') as f:
+    json.dump(cfg, f, indent=4)

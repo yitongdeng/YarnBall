@@ -111,6 +111,9 @@ namespace YarnBall {
 		float minSegLen;			// Largest segment length
 		int useStepSizeLimit;		// Whether to use the step size limit
 		int useVelocityRadius;		// Whether to add velocity onto the collision radius
+		
+
+		int use_ext_q;
 	} MetaData;
 
 	class Sim {

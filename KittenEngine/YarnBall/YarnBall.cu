@@ -139,16 +139,13 @@ namespace YarnBall {
 				vec3 tmp = normalize(seg0);
 				printf("Segment: (%f, %f, %f)\n", tmp[0], tmp[1], tmp[2]);
 				printf("Bishop Frame: \n");
-				Kit::print(lastQ);
-				
+				Kit::print(lastQ);				
 
-				lastQ = lastQ * Kit::Rotor(vec4(cos(1.4), 0., 0., sin(1.4)));
-				printf("Bishop Frame perturbed: \n");
-				Kit::print(lastQ);
-
-				//lastQ = qs[i];
-				//printf("Modified Frenet Frame: \n");
-				//Kit::print(lastQ);
+				if (meta.use_ext_q) {
+					lastQ = qs[i];
+					printf("Replacing with ext supplied Frame: \n");
+					Kit::print(lastQ);
+				}
 
 				mass += v.lRest;
 
