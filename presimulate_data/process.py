@@ -32,9 +32,9 @@ offset = np.arange(num_selected)
 offset = np.stack([offset, np.zeros_like(offset), np.zeros_like(offset)], axis = -1)[:, np.newaxis, :]
 poss = scale * (np.load("logs/sampled/poss.npy")[:num_selected]) + offset
 frames = frame_scale * np.load("logs/sampled/frames.npy")[:num_selected]
-e1s = frames[..., 0, :]
-e2s = frames[..., 1, :]
-e3s = frames[..., 2, :]
+e1s = frames[..., 0]
+e2s = frames[..., 1]
+e3s = frames[..., 2]
 poss_flat = poss.reshape(-1,3)
 e1s_flat = e1s.reshape(-1,3)
 e2s_flat = e2s.reshape(-1,3)
@@ -49,7 +49,7 @@ write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, pos
 frames_flat = frames.reshape(-1, 3, 3)
 qs = []
 for i, frame in enumerate(frames_flat):
-    rotation = R.from_matrix(frame.T)
+    rotation = R.from_matrix(frame)
     q = rotation.as_quat()
     qs.append(q)
 

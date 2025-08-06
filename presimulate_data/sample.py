@@ -4,6 +4,7 @@ from scipy.stats import qmc
 np.random.seed(42)
 #from io_utils import *
 import os
+from scipy.spatial.transform import Rotation as R
 
 def is_proper_rotation(R, rtol=1e-5, atol=1e-8):
     """
@@ -48,6 +49,53 @@ def add_twist_tan(pos, theta, twist_freq): # twist_freq in units 1/length
 def extrapolate_segment(pos):
     # pos: [n, 3]
     return np.vstack([pos, 2*pos[[-1]]-pos[[-2]]]) 
+
+def align_rod(positions, frames, target_frame=None):
+    """
+    Rotate a discrete Cosserat rod so that its ROOT material frame
+    (index 0) aligns with `target_frame`, without moving the root vertex.
+
+    Parameters
+    ----------
+    positions : (n, 3) ndarray
+    frames    : (n, 3, 3) ndarray
+    target_frame : (3, 3) ndarray or None
+        Desired orientation for the root frame.  Identity if None.
+
+    Returns
+    -------
+    pos_out : (n, 3) ndarray
+    frame_out : (n, 3, 3) ndarray
+    Q : (3, 3) ndarray
+        Rotation that was applied.
+    """
+    pos   = np.asarray(positions, float)
+    fr    = np.asarray(frames,    float)
+    n     = pos.shape[0]
+
+    if target_frame is None:
+        target_frame = np.eye(3)
+    target_frame = np.asarray(target_frame, float)
+
+    # ------------------------------------------------------------------
+    # 1. rotation that carries the current root frame to the target
+    # ------------------------------------------------------------------
+    R0 = fr[0]                      # current root frame (3×3)
+    Q  = target_frame @ R0.T        # desired rotation (3×3, det ≈ +1)
+
+    # ------------------------------------------------------------------
+    # 2. translate-to-origin  → rotate → translate-back
+    # ------------------------------------------------------------------
+    p0          = pos[0]            # root position, shape (3,)
+    shifted     = pos - p0          # broadcast, shape (n,3)
+    pos_out     = np.einsum("ij, kj->ki", Q, shifted) + p0
+
+    # ------------------------------------------------------------------
+    # 3. rotate every local frame
+    # ------------------------------------------------------------------
+    frame_out   = Q[np.newaxis, :, :] @ fr   # (n,3,3)
+
+    return pos_out, frame_out, Q
 
 if __name__ == "__main__": 
     #
@@ -97,11 +145,17 @@ if __name__ == "__main__":
  
         #nb = bishop
         nb = material
-        frame = np.concatenate([t, nb], axis=-2)
+        frame = np.concatenate([t, nb], axis=-2).transpose((0, 2, 1))
         assert np.all(is_proper_rotation(frame)), "Not proper rotation!"
 
-        poss.append(pos-pos[0])
-        frames.append(frame)
+        # align with some frame
+        R_random = R.random().as_matrix()          # one rotation
+        #print("R_random: ", R_random)
+        pos_aligned, frame_aligned, align_rot = align_rod(pos, frame, R_random)
+        #
+
+        poss.append(pos_aligned-pos_aligned[0])
+        frames.append(frame_aligned)
         taus.append(tau)
 
     poss = np.array(poss)
