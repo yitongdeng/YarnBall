@@ -33,7 +33,7 @@
 		"density": 100,		// Density of the curve in kg/meter
 		"frictionCoeff": 0.1,
 		"kStretch": 1e3,
-		"kBend": 1e0,
+		"kBend": 1e1,
 		"kCollision": 2e-4,
 		"kFriction": 5,
 		"damping": 2e-6,			// Rayleigh damping coeff
