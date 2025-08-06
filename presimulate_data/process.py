@@ -24,14 +24,27 @@ def write_obj_file_list(list_of_vertices, filename="output.obj"):
             f.write("\n")
             vertices_count += vertices.shape[0]
 
+_poss = np.load("logs/sampled/poss.npy")[[92]]
+_frames = np.load("logs/sampled/frames.npy")[[92]]
+num_available = _poss.shape[0]
 # Process strands
-num_selected = 3
+num_selected = num_available
 scale = 0.01
 frame_scale = 0.01
-offset = np.arange(num_selected)
-offset = np.stack([offset, np.zeros_like(offset), np.zeros_like(offset)], axis = -1)[:, np.newaxis, :]
-poss = scale * (np.load("logs/sampled/poss.npy")[:num_selected]) + offset
-frames = frame_scale * np.load("logs/sampled/frames.npy")[:num_selected]
+
+# CUBE OFFSET
+cube_root = np.ceil(np.cbrt(num_selected))
+# 10 × 10 grid in the x‑ and y‑directions
+x, y, z = np.meshgrid(np.arange(cube_root), np.arange(cube_root), np.arange(cube_root), indexing='xy')   # x varies fastest, y slowest
+offset = np.stack((x,y,z), axis=-1).reshape(-1, 3)[:num_selected][:, np.newaxis, :]
+
+# LINE OFFSET
+# offset = np.arange(num_selected)
+# offset = np.stack([offset, np.zeros_like(offset), np.zeros_like(offset)], axis = -1)[:, np.newaxis, :]
+
+
+poss = scale * (_poss[:num_selected]) + offset
+frames = frame_scale * _frames[:num_selected]
 e1s = frames[..., 0]
 e2s = frames[..., 1]
 e3s = frames[..., 2]

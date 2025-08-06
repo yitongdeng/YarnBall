@@ -29,7 +29,7 @@ def is_proper_rotation(R, rtol=1e-5, atol=1e-8):
     dets = np.linalg.det(R)
     right_handed = np.isclose(dets, 1.0, rtol=rtol, atol=atol)
 
-    return ortho & right_handed
+    return ortho, right_handed
 
 # applying twist in gen. coord space, and changing scalp normal
 def add_twist_tan(pos, theta, twist_freq): # twist_freq in units 1/length
@@ -98,6 +98,8 @@ def align_rod(positions, frames, target_frame=None):
     return pos_out, frame_out, Q
 
 if __name__ == "__main__": 
+    n_strands = 100
+
     #
     logs_dir = "logs"
     os.makedirs(logs_dir, exist_ok = True)
@@ -115,7 +117,6 @@ if __name__ == "__main__":
     ])
 
     n_params = param_bounds.shape[0]
-    n_strands = 3
 
     sampler = qmc.LatinHypercube(d=n_params, seed = 42)
     lhs_sample = sampler.random(n=n_strands)
@@ -143,10 +144,19 @@ if __name__ == "__main__":
 
         material = RodUtil.compute_material_frames(theta=np.hstack([theta,theta[[-1]]]), bishop_frame=bishop)
  
-        #nb = bishop
-        nb = material
+        nb = bishop
+        #nb = material
         frame = np.concatenate([t, nb], axis=-2).transpose((0, 2, 1))
-        assert np.all(is_proper_rotation(frame)), "Not proper rotation!"
+
+
+        # orthogonality check
+        RTR = np.matmul(frame.transpose(0, 2, 1), frame)
+        diff = RTR - np.eye(3)
+        print(f"for {i}, {np.linalg.norm(diff, axis = (-2, -1))}\n max diff:", np.max(np.linalg.norm(diff, axis = (-2, -1))))
+        exit()
+
+        # is_orthogonal, no_reflection = is_proper_rotation(frame)
+        #assert np.all(is_orthogonal & no_reflection), f"For {i},Is orthogonal:\n {np.matmul(frame.transpose(0, 2, 1), frame)}"
 
         # align with some frame
         R_random = R.random().as_matrix()          # one rotation
