@@ -82,46 +82,30 @@ if __name__ == "__main__":
     frames = []
     taus = []
     for i, sample in enumerate(scaled_samples):
-        tf = sample.item(0)
-        #print(tf)
-        # f, tf = 0.7, 0.5
-        r, f = 1.5, 0.3
+        r, f, tf = list(sample)
         strand_labels.append({'r': r, 'f': f, 'tf': tf})
         pos, theta = RodGenerator.example_rod(n, r, f, height_scale)
         pos, theta, tau = add_twist_tan(pos, theta, tf)
-        print(pos.shape)
-        # print(frame.shape)
-        # print(pos[1] - pos[0])
-        # print(frame[0])
+
         pos_extrap = extrapolate_segment(pos)
         t = pos_extrap[1:]-pos_extrap[:-1]
         t = t / np.linalg.norm(t, axis=-1, keepdims = True)
         t = t[:, np.newaxis, :]
-        print(t.shape)
         bishop = RodUtil.compute_bishop_frames(pos_extrap)
-        print(bishop.shape)
-        print(theta.shape)
-        print(np.array([0]).shape)
+
         material = RodUtil.compute_material_frames(theta=np.hstack([theta,theta[[-1]]]), bishop_frame=bishop)
-        #exit()
+ 
         #nb = bishop
         nb = material
-        print(material.shape)
-        #exit(0)
-        print(t.shape)
         frame = np.concatenate([t, nb], axis=-2)
         assert np.all(is_proper_rotation(frame)), "Not proper rotation!"
-        #exit()
-        # write_obj_file_list([pos-pos[0]], os.path.join(out_dir, f"{i}.obj"))
+
         poss.append(pos-pos[0])
         frames.append(frame)
         taus.append(tau)
-        print("tau: ", tau)
-        # print(tau)
 
     poss = np.array(poss)
     frames = np.array(frames)
-    # print(frames.shape)
     taus = np.array(taus)
 
     np.save(os.path.join(out_dir, f"poss.npy"), poss)

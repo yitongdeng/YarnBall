@@ -25,24 +25,20 @@ def write_obj_file_list(list_of_vertices, filename="output.obj"):
             vertices_count += vertices.shape[0]
 
 # Process strands
-num_selected = 1
+num_selected = 3
 scale = 0.01
 frame_scale = 0.01
 offset = np.arange(num_selected)
-poss = scale * (np.load("logs/sampled/poss.npy")[:num_selected] + offset)
+offset = np.stack([offset, np.zeros_like(offset), np.zeros_like(offset)], axis = -1)[:, np.newaxis, :]
+poss = scale * (np.load("logs/sampled/poss.npy")[:num_selected]) + offset
 frames = frame_scale * np.load("logs/sampled/frames.npy")[:num_selected]
 e1s = frames[..., 0, :]
 e2s = frames[..., 1, :]
 e3s = frames[..., 2, :]
-poss_flat = poss.reshape(-1,3)#(0.5 * (poss[:, 1:, ...] + poss[:, :-1, ...])).reshape(-1,3)
+poss_flat = poss.reshape(-1,3)
 e1s_flat = e1s.reshape(-1,3)
 e2s_flat = e2s.reshape(-1,3)
 e3s_flat = e3s.reshape(-1,3)
-
-for start, end in zip(poss_flat, poss_flat+e1s_flat):
-    print(np.stack([start, end]).shape)
-    print("start: ", start)
-    print("end: ", end)
 
 write_obj_file_list(poss, filename = os.path.join(out_dir,"poss.obj"))
 write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, poss_flat+e1s_flat)], filename = os.path.join(out_dir, "e1.obj"))
