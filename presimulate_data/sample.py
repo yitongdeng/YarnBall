@@ -98,7 +98,7 @@ def align_rod(positions, frames, target_frame=None):
     return pos_out, frame_out, Q
 
 if __name__ == "__main__": 
-    n_strands = 10000
+    n_strands = 1
 
     #
     logs_dir = "logs"
@@ -167,6 +167,7 @@ if __name__ == "__main__":
         #pos_aligned, frame_aligned, align_rot = pos, frame, None 
         
         # WITH ALIGNMENT
+        #pos_aligned, frame_aligned, align_rot = align_rod(pos, frame)
         R_random = R.random().as_matrix()          # target
         pos_aligned, frame_aligned, align_rot = align_rod(pos, frame, R_random)
         #
