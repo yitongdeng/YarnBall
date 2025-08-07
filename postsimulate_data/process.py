@@ -4,6 +4,14 @@ import json5
 import json
 from scipy.spatial.transform import Rotation as R
 
+
+from utils.arguments import parseArgs
+from utils.geometry import load_strands
+from utils.strands_to_frame import strands_to_frame
+from utils.cubic_viz import interactive_cubic
+from utils.spline_utils import evaluate_spline_batch
+
+
 def load_obj_lines(filename: str) -> np.ndarray:
     vertices = []          # will become (Nv, 3)
     line_idx = []          # list of lists – one per `l` record
@@ -46,8 +54,61 @@ def write_obj_file_list(list_of_vertices, filename="output.obj"):
             vertices_count += vertices.shape[0]
 
 poss = load_obj_lines("frame_200.obj")
-write_obj_file_list(poss, "frame_200_2.obj")
 
+#
+x_arr, y_arr, z_arr = poss[..., 0], poss[..., 1], poss[..., 2]
+# Sarah's code
+args = parseArgs("Helix Generation")
+args.n_fine_sampling = 10 * poss.shape[1]
+if not os.path.exists(args.save_path):
+    os.makedirs(args.save_path)
+x_fine_arr, y_fine_arr, z_fine_arr = evaluate_spline_batch(x_arr, y_arr, z_arr, args.n_fine_sampling)
+e_1_arr, e_2_arr, e_3_arr, curvature_arr, torsion_arr, v_arr, t_arr = strands_to_frame(x_arr, y_arr, z_arr, args)
+
+poss_fine = np.array([np.stack([x_fine, y_fine, z_fine], axis = -1) for (x_fine, y_fine, z_fine) in zip(x_fine_arr, y_fine_arr, z_fine_arr)])
+write_obj_file_list(poss_fine, "frame_200_fine.obj")
+frame_scale = 0.01 
+poss_flat = poss_fine.reshape(-1,3)
+e1s_flat = frame_scale * np.array(e_1_arr).reshape(-1,3)
+e2s_flat = frame_scale * np.array(e_2_arr).reshape(-1,3)
+e3s_flat = frame_scale * np.array(e_3_arr).reshape(-1,3)
+# poss_flat = poss.reshape(-1,3)
+write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, poss_flat+e1s_flat)], filename = "e1.obj")
+write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, poss_flat+e2s_flat)], filename = "e2.obj")
+write_obj_file_list([np.stack([start, end]) for start, end in zip(poss_flat, poss_flat+e3s_flat)], filename = "e3.obj")
+# #
+# # reconstruction
+# # during integration we assume kappa[i] is constant in the duration t[i] to t[i+1]
+# def integrate_tangent(e1, speed, t, x0):
+#     num_steps = e1.shape[0]-1
+#     xs = [x0]
+#     #
+#     for i in range(num_steps):
+#         h = t[i+1] - t[i]
+#         speed_i = speed[i]
+#         e1_i = e1[i]
+#         # x
+#         x_next = xs[-1] + h * speed_i * e1_i
+#         xs.append(x_next)
+
+#     return np.stack(xs, axis = 0)
+
+# poss_recon = []
+# for i, (curvature, torsion, speed, x, y, z, e_1, e_2, e_3, t) in enumerate(zip(curvature_arr, torsion_arr, v_arr, x_fine_arr, y_fine_arr, z_fine_arr, e_1_arr, e_2_arr, e_3_arr, t_arr)):
+#     #t *= 5.9
+#     # F, x = integrate_frenet_serret(kappa=curvature, tau=torsion, speed=speed, t=t, 
+#     #         F0 = np.hstack([e_1[0].reshape(-1, 1), e_2[0].reshape(-1, 1), e_3[0].reshape(-1, 1)]), x0 = np.array([x[0], y[0], z[0]]))
+#     x = integrate_tangent(e1 = e_1, speed=speed, t=t, x0 = np.array([x[0], y[0], z[0]]))
+#     poss_recon.append(x)
+# poss_recon = np.array(poss_recon)
+
+# write_obj_file_list(poss_recon, "frame_200_2.obj")
+
+# print(poss_recon.shape)
+# for i in range(len(e_1_arr[0])):
+#     print(np.linalg.norm(np.cross((poss_recon[0, 1:] - poss_recon[0, :-1])[i], e_1_arr[0][i])))
+# #print(e_1_arr[0])
+# exit()
 
 # from utils.arguments import parseArgs
 # from utils.geometry import load_strands
