@@ -172,9 +172,43 @@ def integrate_frenet_serret(kappa, tau, speed, t, F0, x0, reorthonormalize=True)
 
     return T, Nn, B, X
 
+# # during integration we assume kappa[i] is constant in the duration t[i] to t[i+1]
+# def integrate_frenet_serret(kappa, tau, speed, t, F0, x0):
+#     num_steps = kappa.shape[0]-1
+#     Fs = [F0]
+#     xs = [x0]
+#     #
+#     for i in range(num_steps):
+#         h = t[i+1] - t[i]
+#         kappa_i = kappa[i]
+#         tau_i = tau[i]
+#         speed_i = speed[i]
+#         #
+#         T = Fs[-1][:, 0]
+#         B = Fs[-1][:, 2]
+#         omega = speed_i * (tau_i * T + kappa_i * B)
+#         displacement = h * omega
+#         angle = np.linalg.norm(displacement)
+#         if angle > 1.e-6:
+#             axis = displacement / angle
+#             skew = np.array([[0,-axis[2],axis[1]],
+#                         [axis[2],0,-axis[0]],
+#                         [-axis[1],axis[0],0]])
+#             R = (np.eye(3)+np.sin(angle)*skew + (1-np.cos(angle))*skew@skew)
+#         else:
+#             R = np.eye(3)
+#         F_next = R @ Fs[-1]
+#         Fs.append(F_next)
+#         # x
+#         x_next = xs[-1] + h * speed_i * T
+#         xs.append(x_next)
+
+#     Fs = np.stack(Fs, axis = 0)
+#     return Fs[..., 0], Fs[..., 1], Fs[..., 2], np.stack(xs, axis = 0)
+
 F0 = np.column_stack([T[0], N[0], B[0]])  # shape [3,3]
 x0 = np.array([x_fine[0], y_fine[0], z_fine[0]])
 T_recon, N_recon, B_recon, poss_recon = integrate_frenet_serret(curvature, torsion, speed, t_fine, F0, x0)
 
 write_obj_file_list([poss_recon], "tmp_recon.obj")
-write_strand_frames(poss_fine, T_recon, N_recon, B_recon, filename_prefix = "tmp_recon_", frame_scale = 0.01)
+write_strand_frames(poss_recon, T_recon, N_recon, B_recon, filename_prefix = "tmp_recon_", frame_scale = 0.01)
