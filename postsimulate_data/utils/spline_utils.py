@@ -138,7 +138,7 @@ def get_frenet_frame(x_fine, y_fine, z_fine, x_prime_fine, y_prime_fine, z_prime
     v_cross_a = np.cross(v, a)
     det_v_a_aprime = np.sum(v * np.cross(a, a_prime), axis=1)
     torsion = det_v_a_aprime / (np.linalg.norm(v_cross_a, axis=1)**2)
-    return T, N, B, curvature, torsion
+    return T, N, B, curvature, torsion, v_norm
 
 def smooth_curvature_torsion(e_1, e_2, e_3, t_fine, v):
     e_1_prime = np.gradient(e_1, axis=0) / np.gradient(t_fine)[:, None]
