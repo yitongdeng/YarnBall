@@ -85,6 +85,59 @@ T, N, B, curvature, torsion, speed = get_frenet_frame(
 
 write_strand_frames(poss_fine, T, N, B, filename_prefix = "tmp_", frame_scale = 0.01)
 
+
+def integrate_tangent(e1, speed, t, x0, eps=1e-12):
+    """
+    Integrate r'(t) = speed(t) * e1(t) using RK4 over discrete samples.
+
+    Parameters
+    ----------
+    e1 : (N,3) array
+        Tangent directions at each t[i] (ideally unit length).
+    speed : (N,) array
+        Speed ||r'(t)|| at each t[i].
+    t : (N,) array
+        Monotone parameter samples.
+    x0 : (3,) array
+        Initial position r(t[0]).
+    eps : float
+        Small threshold for safe normalization.
+
+    Returns
+    -------
+    X : (N,3) array
+        Integrated positions.
+    """
+    N = t.shape[0]
+    X = np.empty((N, 3), dtype=float)
+    X[0] = np.asarray(x0, dtype=float)
+
+    def unit(v):
+        n = np.linalg.norm(v, axis=-1, keepdims=True)
+        n = np.maximum(n, eps)
+        return v / n
+
+    for i in range(N - 1):
+        h = t[i+1] - t[i]
+
+        e1_i   = e1[i]
+        e1_ip1 = e1[i+1]
+        s_i    = speed[i]
+        s_ip1  = speed[i+1]
+
+        # Midpoint estimates (linear in time); renormalize e1 to avoid shrinkage
+        e1_mid = unit(e1_i + e1_ip1)
+        s_mid  = 0.5 * (s_i + s_ip1)
+
+        k1 = s_i   * e1_i
+        k2 = s_mid * e1_mid
+        k3 = s_mid * e1_mid
+        k4 = s_ip1 * e1_ip1
+
+        X[i+1] = X[i] + (h/6.0) * (k1 + 2*k2 + 2*k3 + k4)
+
+    return X
+
 def integrate_frenet_serret(kappa, tau, speed, t, F0, x0, reorthonormalize=True):
     """
     Integrate Frenet–Serret frames AND curve position for a non–arc-length parameterization.
